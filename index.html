@@ -57,7 +57,7 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 
 .toast { position: fixed; left: 50%; top: 26%; transform: translate(-50%, -50%) rotate(-3deg); font-family: var(--font-display);
   font-size: clamp(20px, 5vw, 30px); color: var(--danfo); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill;
-  text-shadow: 3px 3px 0 var(--ink); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .2s; text-align: center; }
+  text-shadow: 3px 3px 0 var(--ink); width: max-content; max-width: calc(100vw - 32px); text-wrap: balance; line-height: 1.15; pointer-events: none; opacity: 0; transition: opacity .2s; text-align: center; }
 .toast small { display: block; margin-top: 6px; font: 800 15px var(--font-body); color: var(--paper); -webkit-text-stroke: 0; text-shadow: 0 0 6px var(--ink), 1px 1px 0 var(--ink); }
 .toast.show { opacity: 1; }
 
@@ -91,6 +91,47 @@ kbd { font: 800 12px var(--font-body); border: 2px solid var(--ink); border-bott
 .stats dd.small { font-size: 15px; }
 .newbest { align-self: flex-start; background: var(--danfo); border: 2px solid var(--ink); font-weight: 800; padding: 3px 10px; border-radius: 999px; transform: rotate(-2deg); }
 .loading { font-family: var(--font-display); color: var(--ink); font-size: 18px; }
+/* character picker: panel to the side so the runner stays in view */
+.screen.side { place-items: end center; background: rgba(22,18,12,.12); }
+.screen.side .panel { max-height: 100%; }
+@media (max-width: 759px) {
+  /* compact two-column picker that fits a phone without scrolling */
+  .screen.side .stripes { height: 12px; }
+  .screen.side .panel-body { padding: 12px 14px 14px; gap: 10px; }
+  .screen.side .over-title { font-size: 22px; }
+  .screen.side .char-line { font-size: 13px; min-height: 0; }
+  .screen.side #charList { gap: 10px; }
+  .screen.side .char-group { gap: 6px; }
+  .screen.side .char-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .screen.side .char { padding: 6px 8px; gap: 8px; }
+  .screen.side .char .sw { width: 22px; height: 22px; }
+  .screen.side .char b { font-size: 13px; }
+  .screen.side .char .meta, .screen.side .char .state { font-size: 11px; }
+  .screen.side #charsDone { padding: 10px; font-size: 18px; }
+}
+@media (min-width: 760px) {
+  .screen.side { place-items: center start; padding-left: max(16px, 5vw); }
+  .screen.side .panel { max-height: calc(100vh - 32px); }
+}
+.char-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.char-line { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.4; min-height: 2.8em; }
+.char-line b { font-weight: 800; }
+.char-group { display: flex; flex-direction: column; gap: 8px; }
+.char-group h3 { margin: 0; font: 800 12px var(--font-body); text-transform: uppercase; letter-spacing: .12em; color: #6b5a3c; }
+.char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+#charList { display: flex; flex-direction: column; gap: 14px; }
+.char { display: flex; gap: 10px; align-items: center; text-align: left; min-width: 0; border: 2px solid var(--ink); border-radius: 8px;
+  background: #fff; padding: 8px; cursor: pointer; font: inherit; color: var(--ink); }
+.char:focus-visible { outline: 3px solid var(--naija); outline-offset: 2px; }
+.char[aria-pressed="true"] { background: var(--danfo); box-shadow: 3px 3px 0 var(--ink); }
+.char.locked { background: #f3ead6; }
+.char .sw { width: 30px; height: 30px; border-radius: 6px; flex: none; border: 2px solid var(--ink); background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%); }
+.char .txt { min-width: 0; }
+.char b { display: block; font-weight: 800; font-size: 14px; }
+.char .meta { display: block; font-size: 12px; color: #5b4c33; }
+.char .state { display: block; font-size: 12px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.char.locked .state { color: var(--brick); }
+.earned { margin: 0; font-weight: 800; color: var(--naija); }
 @media (prefers-reduced-motion: reduce) { .btn, .toast { transition: none; } }
 </style>
 </head>
@@ -128,8 +169,11 @@ kbd { font: 800 12px var(--font-body); border: 2px solid var(--ink); border-bott
         <dt><kbd>↓</kbd></dt><dd>Slide under banners</dd>
         <dt>Phone</dt><dd>Swipe left, right, up or down</dd>
       </dl>
-      <button class="btn" id="startBtn" disabled><span class="loading">Loading Lagos…</span></button>
-      <p class="best">Best score <b id="bestStart">0</b></p>
+      <div class="row">
+        <button class="btn" id="startBtn" disabled><span class="loading">Loading Lagos…</span></button>
+        <button class="btn alt" id="charsBtn">Characters</button>
+      </div>
+      <p class="best">Best score <b id="bestStart">0</b> · Purse <b>₦<span class="purse-val">0</span></b></p>
     </div>
   </div>
 </div>
@@ -159,8 +203,27 @@ kbd { font: 800 12px var(--font-body); border: 2px solid var(--ink); border-bott
         <div><dt>Distance</dt><dd id="oDist">0 m</dd></div>
         <div><dt>Reached</dt><dd class="small" id="oArea">Ikeja</dd></div>
       </dl>
-      <button class="btn" id="againBtn">Run again</button>
-      <p class="best">Best score <b id="bestOver">0</b></p>
+      <p class="earned" id="earned"></p>
+      <div class="row">
+        <button class="btn" id="againBtn">Run again</button>
+        <button class="btn alt" id="charsBtn2">Characters</button>
+      </div>
+      <p class="best">Best score <b id="bestOver">0</b> · Purse <b>₦<span class="purse-val">0</span></b></p>
+    </div>
+  </div>
+</div>
+
+<div class="screen side" id="charScreen" hidden>
+  <div class="panel">
+    <div class="stripes"></div>
+    <div class="panel-body">
+      <div class="char-head">
+        <h2 class="over-title" style="color:var(--ink)">Pick your runner</h2>
+        <span class="chip"><span class="coin">₦</span><span class="purse-val">0</span></span>
+      </div>
+      <p class="char-line" id="charLine"></p>
+      <div id="charList"></div>
+      <button class="btn" id="charsDone">Done</button>
     </div>
   </div>
 </div>
@@ -187,19 +250,42 @@ const CREWS = {
   olopa:  { label: 'Olopa', taunts: ['Olopa: Stop there!', 'Oga, show your particulars!', 'Na checkpoint! Stop!', 'Where you dey run go?!'], caught: 'Olopa don arrest you!', warn: 'Open your eyes, olopa dey there!' },
   lastma: { label: 'LASTMA', taunts: ['LASTMA: You don commit offence!', 'Who send you this lane?!', 'Come and pay fine!'], caught: 'LASTMA don book you!', warn: 'Shine your eye, LASTMA dey there!' },
 };
+// Playable characters. Prices are in naira from your purse (each coin = ₦10).
+const CHARS = [
+  { id: 'tunde',   group: 'Gents',  name: 'Tunde',            role: 'Super Eagles fan',      price: 0,     sw: ['#0a8a4a', '#ffffff'], line: 'Oya, make we go!',
+    look: () => ({ back: T.jersey, side: 0x0a8a4a, pants: 0x1b2a4a }) },
+  { id: 'konda',   group: 'Gents',  name: 'Sunday the Konda', role: 'Danfo conductor',       price: 2000,  sw: ['#d9d4c4', '#1f4fa3'], line: 'Oshodi! Oshodi! Enter with your change!',
+    look: () => ({ back: T.konda, side: 0xd9d4c4, pants: 0x3a3a3a, towel: true, hat: { type: 'cap', color: 0x1f4fa3 }, prop: 'cash' }) },
+  { id: 'okada',   group: 'Gents',  name: 'Baba Okada',       role: 'Okada rider',           price: 5000,  sw: ['#f08c1a', '#d22d2d'], line: 'Where you dey go? I fit carry you!',
+    look: () => ({ back: T.vest, side: 0xf08c1a, sleeves: true, pants: 0x2b2b2b, longPants: true, shoes: 0x222222, hat: { type: 'helmet', color: 0xd22d2d } }) },
+  { id: 'odogwu',  group: 'Gents',  name: 'Chief Odogwu',     role: 'Lekki big man',         price: 10000, sw: ['#f2efe6', '#7b2d8f'], line: 'Spray money! Odogwu dey for road!',
+    look: () => ({ back: T.agbada, front: T.agbada, side: 0xf2efe6, robe: true, pants: 0xf2efe6, longPants: true, shoes: 0x5a3a20, shades: true, hat: { type: 'fila', color: 0x7b2d8f } }) },
+  { id: 'amaka',   group: 'Ladies', name: 'Amaka',            role: 'UNILAG student',        price: 1500,  sw: ['#f5c518', '#2b4f7a'], line: 'I get 8am lecture! Comot for road!',
+    look: () => ({ back: T.unilag, side: 0xf5c518, pants: 0x2b4f7a, longPants: true, hair: 'braids', backpack: 0x16120c }) },
+  { id: 'basirat', group: 'Ladies', name: 'Iya Basirat',      role: 'Mile 12 market woman',  price: 4000,  sw: ['#1f4fa3', '#c9a227'], line: 'Fine customer, come buy!',
+    look: () => ({ back: T.ankara.blue, sideMat: T.ankara.blue, skirt: { mat: T.ankara.blue, long: true }, sleeves: true, pants: 0x1f4fa3, shoes: 0xc9a227, hat: { type: 'gele', mat: T.gele } }) },
+  { id: 'tiwa',    group: 'Ladies', name: 'Tiwa',             role: 'Lekki baddie',          price: 8000,  sw: ['#c2387a', '#16120c'], line: 'No time to check time!',
+    look: () => ({ back: T.ankara.pink, sideMat: T.ankara.pink, skirt: { mat: T.ankara.pink }, pants: 0xc2387a, hair: 'bun', shades: true, shoes: 0xf5c518, prop: 'bag' }) },
+  { id: 'tobi',    group: 'Kids',   name: 'Tobi',             role: 'Primary school boy',    price: 1000,  sw: ['#f4f4f4', '#1f3a6b'], line: 'Mummy said make I run straight home!',
+    look: () => ({ back: T.schoolShirt, side: 0xf4f4f4, sleeves: true, pants: 0x1f3a6b, shoes: 0x111111, backpack: 0xd22d2d, kid: true }) },
+  { id: 'kemi',    group: 'Kids',   name: 'Kemi',             role: 'Primary school girl',   price: 2500,  sw: ['#2f5aa8', '#f4f4f4'], line: 'Last person to school na rotten egg!',
+    look: () => ({ back: T.pinafore, side: 0x2f5aa8, skirt: { mat: T.pinaforeSkirt }, pants: 0x2f5aa8, hair: 'puffs', shoes: 0x111111, backpack: 0xf5c518, kid: true }) },
+];
+let purse = 0, owned = ['tunde'], charId = 'tunde';
+
 // Route: Ikorodu to Epe, then round again. Areas get longer the further you go.
 const ZONES = [
-  { name: 'Ikorodu',               len: 550, type: 'land', crew: 'agbero', hMin: 4,  hMax: 9,  glass: 0,    stalls: 0.8, palms: 0.35, density: 0.8,  ground: 0xa65f3a },
-  { name: 'Mile 12 Market',        len: 550, type: 'land', crew: 'agbero', hMin: 4,  hMax: 8,  glass: 0,    stalls: 2.2, palms: 0.05, density: 0.9,  ground: 0xa8693f },
-  { name: 'Oshodi',                len: 600, type: 'land', crew: 'agbero', hMin: 5,  hMax: 14, glass: 0.05, stalls: 1.4, palms: 0.05, density: 1,    ground: 0x9f7552, footbridge: 0.14 },
-  { name: 'Ikeja',                 len: 650, type: 'land', crew: 'lastma', hMin: 5,  hMax: 15, glass: 0.12, stalls: 0.6, palms: 0.15, density: 1,    ground: 0xb07a4f, footbridge: 0.06 },
-  { name: 'Yaba',                  len: 650, type: 'land', crew: 'olopa',  hMin: 5,  hMax: 12, glass: 0.05, stalls: 0.75, palms: 0.1, density: 1,    ground: 0xb07a4f },
+  { name: 'Ikorodu',               len: 550, type: 'land', crew: 'agbero', hMin: 4,  hMax: 9,  glass: 0,    stalls: 0.8, palms: 0.35, density: 0.8,  people: 1.3, ground: 0xa65f3a },
+  { name: 'Mile 12 Market',        len: 550, type: 'land', crew: 'agbero', hMin: 4,  hMax: 8,  glass: 0,    stalls: 2.2, palms: 0.05, density: 0.9,  people: 1.8, ground: 0xa8693f },
+  { name: 'Oshodi',                len: 600, type: 'land', crew: 'agbero', hMin: 5,  hMax: 14, glass: 0.05, stalls: 1.4, palms: 0.05, density: 1,    people: 1.6, ground: 0x9f7552, footbridge: 0.14 },
+  { name: 'Ikeja',                 len: 650, type: 'land', crew: 'lastma', hMin: 5,  hMax: 15, glass: 0.12, stalls: 0.6, palms: 0.15, density: 1,    people: 1.2, ground: 0xb07a4f, footbridge: 0.06 },
+  { name: 'Yaba',                  len: 650, type: 'land', crew: 'olopa',  hMin: 5,  hMax: 12, glass: 0.05, stalls: 0.75, palms: 0.1, density: 1,    people: 1.4, ground: 0xb07a4f },
   { name: 'Third Mainland Bridge', len: 850, type: 'bridge', crew: 'olopa' },
-  { name: 'Lagos Island',          len: 700, type: 'land', crew: 'agbero', hMin: 10, hMax: 34, glass: 0.45, stalls: 1.1, palms: 0.05, density: 1,   ground: 0x9c8a74 },
-  { name: 'Victoria Island',       len: 750, type: 'land', crew: 'olopa',  hMin: 12, hMax: 44, glass: 0.7,  stalls: 0.2, palms: 0.4,  density: 1,    ground: 0xa99a80 },
-  { name: 'Lekki',                 len: 800, type: 'land', crew: 'olopa',  hMin: 6,  hMax: 18, glass: 0.25, stalls: 0.3, palms: 0.6,  density: 0.9,  ground: 0xc2a275 },
-  { name: 'Ajah',                  len: 850, type: 'land', crew: 'agbero', hMin: 4,  hMax: 10, glass: 0.02, stalls: 1.2, palms: 0.4,  density: 0.85, ground: 0xb07a4f },
-  { name: 'Epe',                   len: 950, type: 'land', crew: 'olopa',  hMin: 3,  hMax: 6,  glass: 0,    stalls: 0.4, palms: 1.6,  density: 0.35, ground: 0x6f8a3c },
+  { name: 'Lagos Island',          len: 700, type: 'land', crew: 'agbero', hMin: 10, hMax: 34, glass: 0.45, stalls: 1.1, palms: 0.05, density: 1,   people: 1.5, ground: 0x9c8a74 },
+  { name: 'Victoria Island',       len: 750, type: 'land', crew: 'olopa',  hMin: 12, hMax: 44, glass: 0.7,  stalls: 0.2, palms: 0.4,  density: 1,    people: 0.8, ground: 0xa99a80 },
+  { name: 'Lekki',                 len: 800, type: 'land', crew: 'olopa',  hMin: 6,  hMax: 18, glass: 0.25, stalls: 0.3, palms: 0.6,  density: 0.9,  people: 0.8, ground: 0xc2a275 },
+  { name: 'Ajah',                  len: 850, type: 'land', crew: 'agbero', hMin: 4,  hMax: 10, glass: 0.02, stalls: 1.2, palms: 0.4,  density: 0.85, people: 1.2, ground: 0xb07a4f },
+  { name: 'Epe',                   len: 950, type: 'land', crew: 'olopa',  hMin: 3,  hMax: 6,  glass: 0,    stalls: 0.4, palms: 1.6,  density: 0.35, people: 0.6, ground: 0x6f8a3c },
 ];
 const ZONE_TOTAL = ZONES.reduce((s, z) => s + z.len, 0);
 function zoneIndexAt(d) {
@@ -219,6 +305,7 @@ const store = {
   set(k, v) { try { localStorage.setItem('lagosrun.' + k, JSON.stringify(v)); } catch (e) {} },
 };
 let best = store.get('best', 0);
+let purseInit = store.get('purse', 0), ownedInit = store.get('owned', ['tunde']), charInit = store.get('char', 'tunde');
 
 // ---------- DOM ----------
 const $ = (id) => document.getElementById(id);
@@ -231,6 +318,10 @@ const ui = {
 };
 const fmt = (n) => Math.floor(n).toLocaleString('en-NG');
 ui.bestStart.textContent = fmt(best);
+purse = purseInit; owned = Array.isArray(ownedInit) ? ownedInit : ['tunde']; if (!owned.includes('tunde')) owned.push('tunde');
+ui.chars = $('charScreen'); ui.charList = $('charList'); ui.charLine = $('charLine'); ui.earned = $('earned');
+function paintPurse() { document.querySelectorAll('.purse-val').forEach((el) => { el.textContent = fmt(purse); }); }
+paintPurse();
 
 // ---------- sound ----------
 const Sound = (() => {
@@ -530,6 +621,43 @@ function buildAssets() {
     g.fillStyle = '#161a24'; g.fillRect(0, 0, w, h); g.fillStyle = '#c9a227'; g.fillRect(84, 26, 18, 14); g.fillStyle = '#ddd'; g.fillRect(24, 28, 30, 8);
   }) });
   T.lastma = Lam(0xffffff, { map: backTex('#e2b11f', '#7a1f2b', 'LASTMA', 28) });
+  const pattern = (bg, a, b) => canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) {
+      const ox = (y / 32) % 2 ? 16 : 0;
+      g.fillStyle = a; g.beginPath(); g.arc(x + ox + 8, y + 16, 11, 0, 7); g.fill();
+      g.fillStyle = b; g.beginPath(); g.arc(x + ox + 8, y + 16, 5, 0, 7); g.fill();
+      g.strokeStyle = b; g.lineWidth = 3; g.beginPath(); g.moveTo(x + ox + 20, y + 4); g.lineTo(x + ox + 30, y + 14); g.stroke();
+    }
+  }, true);
+  T.ankara = {
+    blue: Lam(0xffffff, { map: pattern('#1f4fa3', '#f5c518', '#d22d2d') }),
+    orange: Lam(0xffffff, { map: pattern('#e86a1c', '#0a8a4a', '#fff7e2') }),
+    pink: Lam(0xffffff, { map: pattern('#c2387a', '#f5c518', '#16120c') }),
+    green: Lam(0xffffff, { map: pattern('#0a8a4a', '#f08c1a', '#fff7e2') }),
+    purple: Lam(0xffffff, { map: pattern('#5a3d8f', '#f5c518', '#fff') }),
+  };
+  const shine = (c) => Lam(0xffffff, { emissive: 0x1a1400, map: canvasTex(64, 64, (g, w, h) => {
+    g.fillStyle = c; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.35)'; for (let y = 0; y < h; y += 8) g.fillRect(0, y, w, 3);
+  }, true) });
+  T.gele = shine('#c9a227'); T.geleGreen = shine('#2e9a5a'); T.gelePink = shine('#d64f8f');
+  T.agbada = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#f2efe6'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#c9a227'; g.lineWidth = 5; g.beginPath(); g.moveTo(38, 0); g.lineTo(64, 50); g.lineTo(90, 0); g.stroke();
+    g.fillStyle = '#c9a227'; for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(64, 62 + i * 13, 4, 0, 7); g.fill(); }
+  }) });
+  T.konda = Lam(0xffffff, { map: backTex('#d9d4c4', '#16120c', 'OSHODI', 26) });
+  T.unilag = Lam(0xffffff, { map: backTex('#f5c518', '#16120c', 'UNILAG', 28) });
+  T.vest = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#f08c1a'; g.fillRect(0, 0, w, h); g.fillStyle = '#e6e9ec'; g.fillRect(0, 70, w, 12); g.fillRect(0, 96, w, 12);
+    g.fillStyle = '#16120c'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `30px ${DISPLAY}`; g.fillText('042', 64, 38);
+  }) });
+  T.schoolShirt = Lam(0xffffff, { map: backTex('#f4f4f4', '#1f3a6b', '') });
+  T.pinafore = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#f4f4f4'; g.fillRect(0, 0, w, h); g.fillStyle = '#2f5aa8'; g.fillRect(14, 30, 100, 98); g.fillRect(14, 0, 20, 30); g.fillRect(94, 0, 20, 30);
+  }) });
+  T.pinaforeSkirt = Lam(0x2f5aa8);
+  T.officeShirt = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => { g.fillStyle = '#dfe9f3'; g.fillRect(0, 0, w, h); g.fillStyle = '#8f1d2c'; g.fillRect(56, 0, 16, 90); }) });
   T.welcome = ZONES.map((z) => Basic(0xffffff, { map: canvasTex(1024, 192, (g, w, h) => {
     g.fillStyle = '#0d6b3d'; g.fillRect(0, 0, w, h); g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(12, 12, w - 24, h - 24);
     g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -688,6 +816,27 @@ function buildPrefabs() {
     const roof = mesh(box(3.6, 0.15, 3.6), T.zinc, 0, 4.3, 0); roof.rotation.z = 0.15; g.add(roof);
     return g;
   })();
+  // people on the sidewalk: ladies, gents and kids
+  const NPCS = [
+    [{ back: T.ankara.orange, sideMat: T.ankara.orange, skirt: { mat: T.ankara.orange, long: true }, sleeves: true, pants: 0xe86a1c, hat: { type: 'bandana', color: 0xe86a1c }, tray: 0xf08c1a, shoes: 0x7a5434 }, 'tray'],
+    [{ back: T.ankara.green, sideMat: T.ankara.green, skirt: { mat: T.ankara.green, long: true }, sleeves: true, pants: 0x0a8a4a, hat: { type: 'gele', mat: T.geleGreen }, baby: T.ankara.purple, shoes: 0xc9a227 }, 'stand'],
+    [{ back: T.ankara.purple, sideMat: T.ankara.purple, skirt: { mat: T.ankara.purple }, pants: 0x5a3d8f, hair: 'braids', prop: 'phone', shoes: 0xf4f4f4 }, 'phone'],
+    [{ back: T.ankara.pink, sideMat: T.ankara.pink, skirt: { mat: T.ankara.pink, long: true }, sleeves: true, pants: 0xc2387a, hat: { type: 'gele', mat: T.gelePink }, prop: 'bag', shoes: 0xc9a227 }, 'stand'],
+    [{ side: 0x3a6b8f, robe: true, pants: 0x3a6b8f, longPants: true, shoes: 0x5a3a20, hat: { type: 'fila', color: 0x3a6b8f }, prop: 'phone' }, 'phone'],
+    [{ back: T.officeShirt, front: T.officeShirt, side: 0xdfe9f3, sleeves: true, pants: 0x2b2b2b, longPants: true, shoes: 0x111111, prop: 'bag' }, 'walk'],
+    [{ back: T.konda, side: 0xd9d4c4, pants: 0x3a3a3a, hat: { type: 'cap', color: 0x0a8a4a }, tray: 0xd23c1e }, 'tray'],
+    [{ back: T.schoolShirt, side: 0xf4f4f4, sleeves: true, pants: 0x1f3a6b, shoes: 0x111111, backpack: 0x0a8a4a, kid: true }, 'walk'],
+    [{ back: T.pinafore, side: 0x2f5aa8, skirt: { mat: T.pinaforeSkirt }, pants: 0x2f5aa8, hair: 'puffs', shoes: 0x111111, backpack: 0xd22d2d, kid: true }, 'walk'],
+    [{ back: T.jersey, side: 0x0a8a4a, pants: 0x1b2a4a, kid: true }, 'wave'],
+  ];
+  P.npcs = NPCS.map(([look, pose]) => {
+    const r = makeRunner(look);
+    if (pose === 'tray') { r.arms[1].rotation.set(-2.9, 0, 0.3); }
+    if (pose === 'phone') { r.arms[0].rotation.set(-2.5, 0, -0.6); }
+    if (pose === 'walk') { r.legs[0].rotation.x = 0.35; r.legs[1].rotation.x = -0.35; r.arms[0].rotation.x = -0.4; r.arms[1].rotation.x = 0.4; }
+    if (pose === 'wave') { r.arms[1].rotation.set(-2.8, 0, 0.5); }
+    return r.group;
+  });
   // pedestrian bridge over the road (Oshodi / Ikeja)
   P.footbridge = (() => {
     const g = new THREE.Group();
@@ -713,17 +862,44 @@ function buildPrefabs() {
 // ---------- characters ----------
 function makeRunner(o) {
   const g = new THREE.Group();
-  const skin = Lam(o.skin || 0x6b3e26), pants = Lam(o.pants), shoe = Lam(o.shoes || 0xf4f4f4), dark = Lam(0x1b1b1b), side = Lam(o.side);
-  const torso = mesh(box(0.62, 0.72, 0.36), [side, side, side, side, o.back, o.front || o.back], 0, 1.16, 0);
+  const skin = Lam(o.skin || 0x6b3e26), dark = Lam(0x1b1b1b), white = Lam(0xf4f4f4);
+  const side = o.sideMat || Lam(o.side), pants = Lam(o.pants), shoe = Lam(o.shoes || 0xf4f4f4);
+  const torso = mesh(box(0.62, 0.72, 0.36), [side, side, side, side, o.back || side, o.front || o.back || side], 0, 1.16, 0);
   g.add(torso);
-  g.add(mesh(box(0.64, 0.24, 0.38), pants, 0, 0.72, 0));
+  g.add(mesh(box(0.64, 0.24, 0.38), o.skirt ? o.skirt.mat : pants, 0, 0.72, 0));
   if (o.belt) g.add(mesh(box(0.65, 0.08, 0.39), Lam(o.belt), 0, 0.84, 0));
+  if (o.skirt) g.add(o.skirt.long ? mesh(box(0.7, 0.8, 0.44), o.skirt.mat, 0, 0.46, 0) : mesh(box(0.72, 0.36, 0.46), o.skirt.mat, 0, 0.62, 0));
+  if (o.robe) g.add(mesh(box(0.9, 1.1, 0.46), side, 0, 0.98, 0));
+  if (o.backpack) { const bp = Lam(o.backpack); g.add(mesh(box(0.46, 0.52, 0.2), bp, 0, 1.15, 0.28)); g.add(mesh(box(0.36, 0.2, 0.08), bp, 0, 1.0, 0.41)); }
+  if (o.towel) { g.add(mesh(box(0.22, 0.06, 0.42), white, -0.22, 1.54, 0)); g.add(mesh(box(0.22, 0.5, 0.05), white, -0.22, 1.28, 0.21)); }
+  if (o.baby) {
+    g.add(mesh(box(0.56, 0.46, 0.24), o.baby, 0, 1.06, 0.3));
+    g.add(mesh(box(0.24, 0.24, 0.24), skin, 0, 1.4, 0.32)); g.add(mesh(box(0.25, 0.07, 0.25), dark, 0, 1.53, 0.32));
+  }
   const head = mesh(box(0.42, 0.44, 0.42), skin, 0, 1.74, 0); g.add(head);
   head.add(mesh(box(0.44, 0.12, 0.44), dark, 0, 0.18, 0));
-  const hw = o.hat && Lam(o.hat.color);
-  if (o.hat && o.hat.type === 'cap') { head.add(mesh(box(0.46, 0.14, 0.46), hw, 0, 0.26, 0)); head.add(mesh(box(0.46, 0.05, 0.3), hw, 0, 0.2, -0.34)); }
-  if (o.hat && o.hat.type === 'beret') { const b = mesh(box(0.5, 0.12, 0.5), hw, 0.03, 0.27, 0); b.rotation.z = -0.18; head.add(b); head.add(mesh(box(0.08, 0.08, 0.04), Lam(0xc9a227), -0.12, 0.26, -0.24)); }
-  if (o.hat && o.hat.type === 'bandana') head.add(mesh(box(0.46, 0.1, 0.46), hw, 0, 0.12, 0));
+  [-0.09, 0.09].forEach((x) => head.add(mesh(box(0.07, 0.07, 0.02), dark, x, 0.03, -0.215)));
+  head.add(mesh(box(0.13, 0.03, 0.02), Lam(0x3a1a12), 0, -0.1, -0.215));
+  if (o.hair === 'braids') for (let i = 0; i < 5; i++) head.add(mesh(box(0.06, 0.55, 0.06), dark, -0.16 + i * 0.08, -0.12, 0.2));
+  if (o.hair === 'bun') head.add(mesh(box(0.22, 0.2, 0.2), dark, 0, 0.3, 0.12));
+  if (o.hair === 'puffs') [-0.2, 0.2].forEach((x) => head.add(mesh(box(0.18, 0.18, 0.18), dark, x, 0.28, 0.05)));
+  const hw = o.hat && (o.hat.mat || Lam(o.hat.color));
+  const ht = o.hat && o.hat.type;
+  if (ht === 'cap') { head.add(mesh(box(0.46, 0.14, 0.46), hw, 0, 0.26, 0)); head.add(mesh(box(0.46, 0.05, 0.3), hw, 0, 0.2, -0.34)); }
+  if (ht === 'beret') { const b = mesh(box(0.5, 0.12, 0.5), hw, 0.03, 0.27, 0); b.rotation.z = -0.18; head.add(b); head.add(mesh(box(0.08, 0.08, 0.04), Lam(0xc9a227), -0.12, 0.26, -0.24)); }
+  if (ht === 'bandana') head.add(mesh(box(0.46, 0.1, 0.46), hw, 0, 0.12, 0));
+  if (ht === 'fila') { const f = mesh(box(0.46, 0.22, 0.46), hw, 0.03, 0.3, 0); f.rotation.z = -0.25; head.add(f); }
+  if (ht === 'helmet') { head.add(mesh(box(0.54, 0.36, 0.54), hw, 0, 0.16, 0.02)); head.add(mesh(box(0.46, 0.14, 0.04), Lam(0x223344), 0, 0.02, -0.28)); }
+  if (ht === 'gele') {
+    head.add(mesh(box(0.6, 0.26, 0.56), hw, 0, 0.3, 0));
+    const fan = mesh(box(0.8, 0.36, 0.08), hw, 0, 0.46, 0.16); fan.rotation.x = -0.45; head.add(fan);
+  }
+  if (o.shades) head.add(mesh(box(0.38, 0.09, 0.04), dark, 0, 0.04, -0.22));
+  if (o.tray) {
+    head.add(mesh(cyl(0.48, 0.42, 0.08, 12), Lam(0xb0b4b8), 0, 0.27, 0));
+    const fruit = Lam(o.tray);
+    for (let i = 0; i < 6; i++) head.add(mesh(box(0.15, 0.15, 0.15), fruit, -0.22 + (i % 3) * 0.22, 0.38 + (i > 2 ? 0.1 : 0), (i > 2 ? 0.08 : -0.12)));
+  }
   const legs = [-0.16, 0.16].map((x) => {
     const piv = new THREE.Group(); piv.position.set(x, 0.78, 0);
     piv.add(mesh(box(0.22, 0.72, 0.24), pants, 0, -0.3, 0));
@@ -734,16 +910,24 @@ function makeRunner(o) {
   const arms = [-0.42, 0.42].map((x) => {
     const piv = new THREE.Group(); piv.position.set(x, 1.46, 0);
     piv.add(mesh(box(0.18, 0.6, 0.2), skin, 0, -0.3, 0));
-    if (o.sleeves) piv.add(mesh(box(0.2, 0.26, 0.22), side, 0, -0.1, 0));
+    if (o.robe) piv.add(mesh(box(0.36, 0.52, 0.36), side, x < 0 ? -0.06 : 0.06, -0.22, 0));
+    else if (o.sleeves) piv.add(mesh(box(0.2, 0.26, 0.22), side, 0, -0.1, 0));
     g.add(piv); return piv;
   });
   if (o.prop === 'machete') {
     arms[1].add(mesh(box(0.07, 0.07, 0.22), Lam(0x2a1a10), 0, -0.6, -0.12));
     const blade = mesh(box(0.05, 0.17, 0.9), Lam(0xc4c8ce, { emissive: 0x333333 }), 0, -0.62, -0.66); blade.rotation.x = 0.08; arms[1].add(blade);
+  } else if (o.prop === 'cash') {
+    arms[1].add(mesh(box(0.06, 0.12, 0.26), Lam(0x3f8f5a), 0, -0.6, -0.12));
+  } else if (o.prop === 'bag') {
+    arms[0].add(mesh(box(0.12, 0.26, 0.34), Lam(0xf5c518), 0, -0.62, 0));
+  } else if (o.prop === 'phone') {
+    arms[0].add(mesh(box(0.06, 0.18, 0.1), dark, 0, -0.62, -0.08));
   } else if (o.prop) {
     const stick = mesh(box(0.07, 0.07, o.prop === 'baton' ? 0.6 : 1.0), Lam(o.prop === 'baton' ? 0x111111 : 0x7a5434), 0, -0.6, -0.25);
     arms[1].add(stick);
   }
+  if (o.kid) g.scale.setScalar(0.78);
   return { group: g, legs, arms, head, torso };
 }
 function animateRunner(r, phase, mode) {
@@ -780,23 +964,21 @@ function initWorld() {
 
   for (let i = 0; i < NSEG; i++) { const g = new THREE.Group(); scene.add(g); segments.push({ group: g, a: 0 }); }
 
-  const r = makeRunner({ back: T.jersey, side: 0x0a8a4a, pants: 0x1b2a4a });
-  player = r; scene.add(r.group);
-  player.cuffs = mesh(box(0.5, 0.1, 0.12), Lam(0xd8dde2, { emissive: 0x333333 }), 0, 0.92, 0.36); player.cuffs.visible = false; r.group.add(player.cuffs);
+  setCharacter(owned.includes(charInit) ? charInit : 'tunde');
   // chasers, each with a formation offset (x, z) behind the player
   const a = T.agbero;
   crews.agbero = [
-    [makeRunner({ back: a[0].mat, side: a[0].bg, pants: 0x2b4f7a, longPants: true, hat: { type: 'cap', color: 0xc8452e }, prop: 'machete' }), 0, 0],
-    [makeRunner({ back: a[1].mat, side: a[1].bg, pants: 0x5a4a2a, hat: { type: 'bandana', color: 0x1f1f1f }, shoes: 0x333333, prop: 'stick' }), -1.05, 0.7],
-    [makeRunner({ back: a[2].mat, side: a[2].bg, pants: 0x3a5f8a, longPants: true, hat: { type: 'bandana', color: 0xc8452e }, prop: 'stick' }), 1.05, 1.0],
-    [makeRunner({ back: Lam(0x5e3420), side: 0x5e3420, pants: 0x4a4a3a, longPants: true, shoes: 0x2a2a2a, prop: 'machete' }), -0.45, 1.3],
+    [makeRunner({ back: a[0].mat, side: a[0].bg, pants: 0x2b4f7a, longPants: true, hat: { type: 'cap', color: 0xc8452e }, prop: 'machete' }), -0.6, 0],
+    [makeRunner({ back: a[1].mat, side: a[1].bg, pants: 0x5a4a2a, hat: { type: 'bandana', color: 0x1f1f1f }, shoes: 0x333333, prop: 'stick' }), 0.6, 0.2],
+    [makeRunner({ back: a[2].mat, side: a[2].bg, pants: 0x3a5f8a, longPants: true, hat: { type: 'bandana', color: 0xc8452e }, prop: 'stick' }), -1.4, 0.9],
+    [makeRunner({ back: Lam(0x5e3420), side: 0x5e3420, pants: 0x4a4a3a, longPants: true, shoes: 0x2a2a2a, prop: 'machete' }), 1.4, 1.1],
   ];
   crews.olopa = [
-    [makeRunner({ back: T.police, front: T.policeFront, side: 0x161a24, sleeves: true, pants: 0x161a24, longPants: true, belt: 0x3a2a1a, shoes: 0x111111, hat: { type: 'beret', color: 0x111111 }, prop: 'baton' }), 0, 0],
-    [makeRunner({ back: T.police, front: T.policeFront, side: 0x161a24, sleeves: true, pants: 0x161a24, longPants: true, belt: 0x3a2a1a, shoes: 0x111111, hat: { type: 'cap', color: 0x161a24 } }), 1.05, 0.8],
+    [makeRunner({ back: T.police, front: T.policeFront, side: 0x161a24, sleeves: true, pants: 0x161a24, longPants: true, belt: 0x3a2a1a, shoes: 0x111111, hat: { type: 'beret', color: 0x111111 }, prop: 'baton' }), -0.6, 0],
+    [makeRunner({ back: T.police, front: T.policeFront, side: 0x161a24, sleeves: true, pants: 0x161a24, longPants: true, belt: 0x3a2a1a, shoes: 0x111111, hat: { type: 'cap', color: 0x161a24 } }), 0.6, 0.3],
   ];
   crews.lastma = [
-    [makeRunner({ back: T.lastma, side: 0xe2b11f, sleeves: true, pants: 0x6e1e2a, longPants: true, shoes: 0x111111, hat: { type: 'beret', color: 0x6e1e2a } }), 0, 0],
+    [makeRunner({ back: T.lastma, side: 0xe2b11f, sleeves: true, pants: 0x6e1e2a, longPants: true, shoes: 0x111111, hat: { type: 'beret', color: 0x6e1e2a } }), 0.7, 0],
   ];
   Object.values(crews).forEach((list) => list.forEach(([m]) => { m.group.position.y = -50; scene.add(m.group); }));
   shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 16), T.shadow); shadow.rotation.x = -Math.PI / 2; scene.add(shadow);
@@ -804,6 +986,15 @@ function initWorld() {
 
 const groundMats = {};
 function groundMat(c) { return groundMats[c] || (groundMats[c] = Lam(c)); }
+function charById(id) { return CHARS.find((c) => c.id === id) || CHARS[0]; }
+function setCharacter(id) {
+  const c = charById(id);
+  const r = makeRunner(c.look());
+  r.cuffs = mesh(box(0.5, 0.1, 0.12), Lam(0xd8dde2, { emissive: 0x333333 }), 0, 0.92, 0.36); r.cuffs.visible = false; r.group.add(r.cuffs);
+  if (player) { r.group.position.copy(player.group.position); scene.remove(player.group); }
+  player = r; scene.add(r.group);
+  charId = c.id; store.set('char', c.id);
+}
 // segments: absolute position `a` is the near edge of the segment along the run
 function buildSegment(seg) {
   const g = seg.group;
@@ -873,6 +1064,11 @@ function buildSegment(seg) {
     for (let k = 0; k < nStalls; k++) { const st2 = pick(P.stalls).clone(); st2.position.set(s * rand(5.3, 6.2), 0.22, -8 + (k + Math.random() * 0.6) * (16 / Math.max(1, nStalls))); st2.rotation.y = rand(0, 3); g.add(st2); }
     const nPalms = Math.floor(zone.palms) + (Math.random() < zone.palms % 1 ? 1 : 0);
     for (let k = 0; k < nPalms; k++) { const p = P.palm.clone(); p.position.set(s * 6.3, 0.2, rand(-8, 8)); p.rotation.y = rand(0, 6); g.add(p); }
+    const ppl = zone.people || 1, nPeople = Math.floor(ppl) + (Math.random() < ppl % 1 ? 1 : 0);
+    for (let k = 0; k < nPeople; k++) {
+      const n = pick(P.npcs).clone(); n.position.set(s * rand(4.9, 6.4), 0.22, -9 + (k + Math.random()) * (18 / nPeople));
+      n.rotation.y = s * Math.PI / 2 + rand(-0.9, 0.9); g.add(n);
+    }
   });
   if (zone.footbridge && Math.random() < zone.footbridge && zoneIndexAt(seg.a - 1) === zi) {
     const fb = P.footbridge.clone(); fb.position.z = rand(-4, 4); g.add(fb);
@@ -985,11 +1181,11 @@ function startRun() {
   Sound.init();
   resetRun();
   st.mode = 'play';
-  ui.start.hidden = true; ui.over.hidden = true; ui.pause.hidden = true;
+  ui.start.hidden = true; ui.over.hidden = true; ui.pause.hidden = true; ui.chars.hidden = true; st.charView = false;
   ui.hud.hidden = false; ui.area.hidden = false;
   Sound.music(true);
   st.show = 5;
-  toast('Oya, run!', 2200, CREWS[ZONES[0].crew].warn);
+  toast(charById(charId).line, 2400, CREWS[ZONES[0].crew].warn);
 }
 function setPaused(p) {
   if (p && st.mode === 'play') { st.mode = 'paused'; ui.pause.hidden = false; Sound.music(false); ui.resumeBtn.focus(); }
@@ -1006,6 +1202,9 @@ function showOver() {
   const isBest = final > best;
   if (isBest) { best = final; store.set('best', best); }
   ui.overTitle.textContent = st.reason;
+  const earned = st.coins * 10;
+  purse += earned; store.set('purse', purse); paintPurse();
+  ui.earned.textContent = earned ? `+₦${fmt(earned)} added to your purse` : 'No naira this time. Grab the coins!';
   ui.newBest.hidden = !isBest;
   ui.oScore.textContent = fmt(final);
   ui.oCoins.textContent = '₦' + fmt(st.coins * 10);
@@ -1036,7 +1235,8 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { if (st.mode === 'play') setPaused(true); else if (st.mode === 'paused') setPaused(false); }
   if (e.key === 'm' || e.key === 'M') { Sound.toggle(); paintMute(); }
-  if ((e.key === 'Enter' || e.key === ' ') && st.mode === 'menu' && !ui.startBtn.disabled && document.activeElement !== ui.startBtn) { e.preventDefault(); startRun(); }
+  if (e.key === 'Escape' && !ui.chars.hidden) { closeChars(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && st.mode === 'menu' && ui.chars.hidden && !ui.startBtn.disabled && document.activeElement && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); startRun(); }
 });
 let touch = null;
 stage.addEventListener('touchstart', (e) => { const t = e.changedTouches[0]; touch = { x: t.clientX, y: t.clientY, done: false }; }, { passive: true });
@@ -1056,6 +1256,47 @@ window.addEventListener('pointerup', (e) => {
 });
 
 ui.startBtn.addEventListener('click', startRun);
+function renderChars(msg) {
+  const groups = ['Ladies', 'Gents', 'Kids'];
+  ui.charList.innerHTML = groups.map((gname) => `<section class="char-group"><h3>${gname}</h3><div class="char-grid">${
+    CHARS.filter((c) => c.group === gname).map((c) => {
+      const have = owned.includes(c.id), on = c.id === charId;
+      const state = on ? 'Running now' : have ? 'Tap to pick' : purse >= c.price ? `Buy for ₦${fmt(c.price)}` : `₦${fmt(c.price)}`;
+      return `<button class="char${have ? '' : ' locked'}" data-id="${c.id}" aria-pressed="${on}" style="--a:${c.sw[0]};--b:${c.sw[1]}">
+        <span class="sw" aria-hidden="true"></span><span class="txt"><b>${c.name}</b><span class="meta">${c.role}</span><span class="state">${state}</span></span></button>`;
+    }).join('')}</div></section>`).join('');
+  const cur = charById(charId);
+  ui.charLine.innerHTML = '';
+  if (msg) ui.charLine.textContent = msg;
+  else { const b = document.createElement('b'); b.textContent = cur.name + ': '; ui.charLine.append(b, '“' + cur.line + '”'); }
+  paintPurse();
+}
+ui.charList.addEventListener('click', (e) => {
+  const btn = e.target.closest('.char'); if (!btn) return;
+  const c = charById(btn.dataset.id);
+  if (!owned.includes(c.id)) {
+    if (purse < c.price) { renderChars(`${c.name} costs ₦${fmt(c.price)}. You need ₦${fmt(c.price - purse)} more. Collect naira on the road.`); refocus(c.id); return; }
+    purse -= c.price; owned.push(c.id); store.set('purse', purse); store.set('owned', owned); Sound.init(); Sound.power();
+  }
+  setCharacter(c.id); renderChars(); refocus(c.id);
+});
+function refocus(id) { const b = ui.charList.querySelector(`[data-id="${id}"]`); if (b) b.focus(); }
+function openChars() {
+  if (st.mode === 'over') { resetRun(); st.mode = 'menu'; }
+  ui.start.hidden = true; ui.over.hidden = true; ui.chars.hidden = false; st.charView = true;
+  renderChars(); refocus(charId); measureCover();
+}
+function measureCover() {
+  if (ui.chars.hidden) return;
+  st.charCover = ui.chars.querySelector('.panel').getBoundingClientRect().height / window.innerHeight;
+}
+window.addEventListener('resize', measureCover);
+function closeChars() {
+  ui.chars.hidden = true; st.charView = false; ui.start.hidden = false; paintPurse(); ui.startBtn.focus();
+}
+$('charsBtn').addEventListener('click', openChars);
+$('charsBtn2').addEventListener('click', openChars);
+$('charsDone').addEventListener('click', closeChars);
 ui.againBtn.addEventListener('click', startRun);
 ui.resumeBtn.addEventListener('click', () => setPaused(false));
 ui.quitBtn.addEventListener('click', () => { ui.pause.hidden = true; st.mode = 'play'; st.reason = 'You rest small. Run ended.'; st.mode = 'dying'; st.dyingT = 1; });
@@ -1100,8 +1341,18 @@ function update(dt) {
     animateRunner(player, st.phase, 'run');
     player.group.position.set(0, 0, 0);
     shadow.position.set(0, 0.02, 0);
-    camera.position.set(Math.sin(st.time * 0.3) * 2.5, 3.2, 6.5);
-    camera.lookAt(0, 1.4, -6);
+    Object.values(crews).forEach((list) => list.forEach(([m]) => { m.group.position.y = -50; }));
+    if (st.charView) {
+      // look back at the runner's face; keep them clear of the picker panel
+      const portrait = camera.aspect < 0.85;
+      // on phones the picker covers the bottom; aim lower the more it covers so the runner sits above it
+      const cover = st.charCover || 0.7;
+      camera.position.set(portrait ? 0.4 : -0.6, portrait ? 1.4 : 1.7, portrait ? -6.2 : -4.4);
+      camera.lookAt(portrait ? 0 : 1.25, portrait ? -2.1 - Math.max(0, cover - 0.7) * 3.5 : 1.0, 0);
+    } else {
+      camera.position.set(Math.sin(st.time * 0.3) * 2.5, 3.2, 6.5);
+      camera.lookAt(0, 1.4, -6);
+    }
     return;
   }
 
