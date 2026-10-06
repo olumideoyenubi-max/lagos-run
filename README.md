@@ -2,10 +2,10 @@
 
 An endless 3D runner set on the streets of Lagos, in the style of Subway Surfers. Open `index.html` in a browser to play. No build step.
 
-- Run from Ikeja through Yaba, across Third Mainland Bridge, into Lagos Island, Victoria Island and Lekki, then loop.
+- Run from Ikorodu through Mile 12 Market, Oshodi, Ikeja and Yaba, across Third Mainland Bridge, into Lagos Island, Victoria Island, Lekki, Ajah and Epe, then loop. Areas get longer as you go, and each one starts with a Lagos State welcome sign.
 - Dodge danfos (or jump onto their roofs), keke napep, road-works barriers, potholes and overhead banners.
 - Collect naira coins. Power-ups: Magnet, Spring sneakers (higher jump), Jollof 2× score.
-- Bump into the side of something and the agbero starts chasing. Bump again before he gives up and he catches you.
+- Bump into the side of something and whoever controls the area starts chasing you: agberos in Ikorodu, Mile 12, Oshodi, Lagos Island and Ajah; olopa (police) in Yaba, on the bridge, V.I., Lekki and Epe; LASTMA in Ikeja. Bump again before they give up and they catch you.
 
 ## Controls
 

@@ -47,6 +47,7 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 .area { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   font-family: var(--font-display); font-size: 13px; letter-spacing: .06em; background: var(--paper); color: var(--ink);
   border: 2px solid var(--ink); padding: 6px 12px; border-radius: 6px; white-space: nowrap; pointer-events: none; box-shadow: 2px 2px 0 var(--ink); }
+.area .crew { font-family: var(--font-body); font-weight: 800; font-size: 11px; letter-spacing: .04em; margin-left: 8px; padding: 2px 7px; border-radius: 4px; background: var(--ink); color: var(--danfo); vertical-align: 1px; }
 .area small { font-family: var(--font-body); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 10px; margin-right: 6px; color: var(--brick); }
 
 .powers { position: fixed; left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 60px); display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
@@ -57,6 +58,7 @@ body { font-family: var(--font-body); -webkit-tap-highlight-color: transparent; 
 .toast { position: fixed; left: 50%; top: 26%; transform: translate(-50%, -50%) rotate(-3deg); font-family: var(--font-display);
   font-size: clamp(20px, 5vw, 30px); color: var(--danfo); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill;
   text-shadow: 3px 3px 0 var(--ink); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .2s; text-align: center; }
+.toast small { display: block; margin-top: 6px; font: 800 15px var(--font-body); color: var(--paper); -webkit-text-stroke: 0; text-shadow: 0 0 6px var(--ink), 1px 1px 0 var(--ink); }
 .toast.show { opacity: 1; }
 
 /* Screens */
@@ -110,7 +112,7 @@ kbd { font: 800 12px var(--font-body); border: 2px solid var(--ink); border-bott
     </button>
   </div>
 </div>
-<div class="area" id="area" hidden><small>Now in</small><span id="areaName">Ikeja</span></div>
+<div class="area" id="area" hidden><small>Now in</small><span id="areaName">Ikorodu</span><span class="crew" id="areaCrew">Agberos</span></div>
 <div class="powers" id="powers"></div>
 <div class="toast" id="toast"></div>
 
@@ -119,7 +121,7 @@ kbd { font: 800 12px var(--font-body); border: 2px solid var(--ink); border-bott
     <div class="stripes"></div>
     <div class="panel-body">
       <h1 class="logo">Lagos<span>Run</span></h1>
-      <p class="tag">Dodge danfos, jump the potholes and grab every naira from Ikeja to Lekki. Stumble twice and the agbero go catch you.</p>
+      <p class="tag">Run across Lagos from Ikorodu to Epe. Dodge danfos, jump the potholes and grab every naira. Stumble twice and whoever controls the area go catch you: agberos in Ikorodu and Oshodi, olopa in Lekki and V.I., LASTMA for Ikeja.</p>
       <dl class="controls">
         <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Change lane</dd>
         <dt><kbd>↑</kbd> / <kbd>Space</kbd></dt><dd>Jump, even onto danfo roofs</dd>
@@ -179,13 +181,25 @@ const SEG_LEN = 20;
 const NSEG = 12;
 const P_W = 0.7, P_D = 0.6, P_H = 1.7, P_H_SLIDE = 0.75;
 
+// Who chases you when you stumble depends on who controls the area.
+const CREWS = {
+  agbero: { label: 'Agberos', taunts: ['Agbero: Where you dey go?!', 'Owo da? Pay your levy!', 'Oya drop something!', 'You don enter our area!'], caught: 'The agberos don catch you!', intro: 'Agberos dey this area. No stumble!' },
+  olopa:  { label: 'Olopa', taunts: ['Olopa: Stop there!', 'Oga, show your particulars!', 'Na checkpoint! Stop!', 'Where you dey run go?!'], caught: 'Olopa don arrest you!', intro: 'Olopa dey patrol here. Behave!' },
+  lastma: { label: 'LASTMA', taunts: ['LASTMA: You don commit offence!', 'Who send you this lane?!', 'Come and pay fine!'], caught: 'LASTMA don book you!', intro: 'LASTMA dey control traffic here' },
+};
+// Route: Ikorodu to Epe, then round again. Areas get longer the further you go.
 const ZONES = [
-  { name: 'Ikeja',                 len: 650, type: 'land', hMin: 5, hMax: 14, glass: 0.05, stalls: 0.6,  palms: 0.15 },
-  { name: 'Yaba',                  len: 650, type: 'land', hMin: 5, hMax: 12, glass: 0.0,  stalls: 0.75, palms: 0.1 },
-  { name: 'Third Mainland Bridge', len: 850, type: 'bridge' },
-  { name: 'Lagos Island',          len: 650, type: 'land', hMin: 10, hMax: 34, glass: 0.45, stalls: 0.5, palms: 0.05 },
-  { name: 'Victoria Island',       len: 650, type: 'land', hMin: 12, hMax: 44, glass: 0.7,  stalls: 0.2, palms: 0.4 },
-  { name: 'Lekki',                 len: 700, type: 'land', hMin: 6,  hMax: 18, glass: 0.25, stalls: 0.3, palms: 0.6 },
+  { name: 'Ikorodu',               len: 550, type: 'land', crew: 'agbero', hMin: 4,  hMax: 9,  glass: 0,    stalls: 0.8, palms: 0.35, density: 0.8,  ground: 0xa65f3a },
+  { name: 'Mile 12 Market',        len: 550, type: 'land', crew: 'agbero', hMin: 4,  hMax: 8,  glass: 0,    stalls: 2.2, palms: 0.05, density: 0.9,  ground: 0xa8693f },
+  { name: 'Oshodi',                len: 600, type: 'land', crew: 'agbero', hMin: 5,  hMax: 14, glass: 0.05, stalls: 1.4, palms: 0.05, density: 1,    ground: 0x9f7552, footbridge: 0.14 },
+  { name: 'Ikeja',                 len: 650, type: 'land', crew: 'lastma', hMin: 5,  hMax: 15, glass: 0.12, stalls: 0.6, palms: 0.15, density: 1,    ground: 0xb07a4f, footbridge: 0.06 },
+  { name: 'Yaba',                  len: 650, type: 'land', crew: 'olopa',  hMin: 5,  hMax: 12, glass: 0.05, stalls: 0.75, palms: 0.1, density: 1,    ground: 0xb07a4f },
+  { name: 'Third Mainland Bridge', len: 850, type: 'bridge', crew: 'olopa' },
+  { name: 'Lagos Island',          len: 700, type: 'land', crew: 'agbero', hMin: 10, hMax: 34, glass: 0.45, stalls: 1.1, palms: 0.05, density: 1,   ground: 0x9c8a74 },
+  { name: 'Victoria Island',       len: 750, type: 'land', crew: 'olopa',  hMin: 12, hMax: 44, glass: 0.7,  stalls: 0.2, palms: 0.4,  density: 1,    ground: 0xa99a80 },
+  { name: 'Lekki',                 len: 800, type: 'land', crew: 'olopa',  hMin: 6,  hMax: 18, glass: 0.25, stalls: 0.3, palms: 0.6,  density: 0.9,  ground: 0xc2a275 },
+  { name: 'Ajah',                  len: 850, type: 'land', crew: 'agbero', hMin: 4,  hMax: 10, glass: 0.02, stalls: 1.2, palms: 0.4,  density: 0.85, ground: 0xb07a4f },
+  { name: 'Epe',                   len: 950, type: 'land', crew: 'olopa',  hMin: 3,  hMax: 6,  glass: 0,    stalls: 0.4, palms: 1.6,  density: 0.35, ground: 0x6f8a3c },
 ];
 const ZONE_TOTAL = ZONES.reduce((s, z) => s + z.len, 0);
 function zoneIndexAt(d) {
@@ -279,6 +293,7 @@ const Sound = (() => {
     bump() { if (!ctx) return; tone(140, ctx.currentTime, 0.2, 'sawtooth', 0.2, 60); },
     crash() { if (!ctx) return; const t = ctx.currentTime; noise(t, 0.5, 0.5, 200); tone(180, t, 0.5, 'sawtooth', 0.3, 40); },
     power() { if (!ctx) return; const t = ctx.currentTime; [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.06, 0.12, 'square', 0.08)); },
+    whistle() { if (!ctx) return; const t = ctx.currentTime; [0, 0.22].forEach((d) => { tone(2300, t + d, 0.16, 'square', 0.06); tone(2450, t + d + 0.04, 0.12, 'square', 0.04); }); },
     horn() { if (!ctx) return; const t = ctx.currentTime; tone(392, t, 0.25, 'sawtooth', 0.07); tone(494, t, 0.25, 'sawtooth', 0.06); },
   };
 })();
@@ -465,7 +480,6 @@ function buildAssets() {
   T.sidewalk = Lam(0xc9b79a);
   T.curb = Lam(0xe7e1d2);
   T.gutter = Lam(0x2f3a2c);
-  T.ground = Lam(0xb07a4f);
   T.trunk = Lam(0x7d5a3a);
   T.leaf = Lam(0x2f7d32);
   T.wire = Basic(0x222222);
@@ -503,9 +517,25 @@ function buildAssets() {
     g.fillStyle = '#0a8a4a'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.fillRect(43, 0, 42, h);
     g.fillStyle = '#16120c'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `40px ${DISPLAY}`; g.fillText('234', 64, 66);
   }) });
-  T.singlet = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => {
-    g.fillStyle = '#efefe8'; g.fillRect(0, 0, w, h); g.fillStyle = '#c8452e'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `30px ${DISPLAY}`; g.fillText('AREA', 64, 64);
+  const backTex = (bg, fg, text, size) => canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    if (text) { g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle'; fitText(g, text, w - 14, size || 30); g.fillText(text, 64, 62); }
+  });
+  T.agbero = [['#efefe8', '#c8452e', 'AREA'], ['#c8452e', '#fff', 'OGBONGE'], ['#2d2d2d', '#f5c518', '']].map(([bg, fg, t]) => ({ bg, mat: Lam(0xffffff, { map: backTex(bg, fg, t) }) }));
+  T.police = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#161a24'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'POLICE', w - 14, 30); g.fillText('POLICE', 64, 56); g.fillStyle = '#c9a227'; g.fillRect(0, 96, w, 6);
   }) });
+  T.policeFront = Lam(0xffffff, { map: canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#161a24'; g.fillRect(0, 0, w, h); g.fillStyle = '#c9a227'; g.fillRect(84, 26, 18, 14); g.fillStyle = '#ddd'; g.fillRect(24, 28, 30, 8);
+  }) });
+  T.lastma = Lam(0xffffff, { map: backTex('#e2b11f', '#7a1f2b', 'LASTMA', 28) });
+  T.welcome = ZONES.map((z) => Basic(0xffffff, { map: canvasTex(1024, 192, (g, w, h) => {
+    g.fillStyle = '#0d6b3d'; g.fillRect(0, 0, w, h); g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(12, 12, w - 24, h - 24);
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, 'LAGOS STATE', 400, 26, 'Archivo, Arial, sans-serif', 800); g.fillText('LAGOS STATE', w / 2, 44);
+    const t = 'WELCOME TO ' + z.name.toUpperCase(); fitText(g, t, w - 80, 70); g.fillText(t, w / 2, 118);
+  }) }));
   T.umbrella = [['#d22d2d', '#fff'], ['#0a8a4a', '#f5c518'], ['#1f4fa3', '#fff'], ['#f08c1a', '#16120c']].map(([a, b]) => Lam(0xffffff, { map: canvasTex(128, 16, (g, w, h) => {
     for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? b : a; g.fillRect(i * 16, 0, 16, h); }
   }) }));
@@ -658,6 +688,19 @@ function buildPrefabs() {
     const roof = mesh(box(3.6, 0.15, 3.6), T.zinc, 0, 4.3, 0); roof.rotation.z = 0.15; g.add(roof);
     return g;
   })();
+  // pedestrian bridge over the road (Oshodi / Ikeja)
+  P.footbridge = (() => {
+    const g = new THREE.Group();
+    const blue = Lam(0x2f5aa8);
+    g.add(mesh(box(13.5, 0.45, 2.4), T.concrete, 0, 7.4, 0));
+    [-1.15, 1.15].forEach((z) => g.add(mesh(box(13.5, 0.9, 0.1), blue, 0, 8.05, z)));
+    g.add(mesh(box(13.5, 0.7, 0.12), Basic(0xffffff, { map: T.boards[2].map }), 0, 8.05, 1.22));
+    [-1, 1].forEach((s) => {
+      g.add(mesh(box(0.4, 7.4, 0.4), T.concrete, s * 4.8, 3.7, 0));
+      const stair = mesh(box(1.4, 0.3, 10), T.concrete, s * 6.2, 3.8, -4.2); stair.rotation.x = -0.72; g.add(stair);
+    });
+    return g;
+  })();
   P.canoe = (() => {
     const g = new THREE.Group();
     g.add(mesh(box(0.8, 0.35, 4), T.wood, 0, 0, 0));
@@ -668,28 +711,36 @@ function buildPrefabs() {
 }
 
 // ---------- characters ----------
-function makeRunner(torsoMat, shortsColor, headwear) {
+function makeRunner(o) {
   const g = new THREE.Group();
-  const skin = Lam(0x6b3e26), shorts = Lam(shortsColor), shoe = Lam(0xf4f4f4), dark = Lam(0x1b1b1b);
-  const torso = mesh(box(0.62, 0.72, 0.36), [Lam(0x0a8a4a), Lam(0x0a8a4a), Lam(0x0a8a4a), Lam(0x0a8a4a), torsoMat, torsoMat], 0, 1.16, 0);
-  if (torsoMat === T.singlet) torso.material = [Lam(0xefefe8), Lam(0xefefe8), Lam(0xefefe8), Lam(0xefefe8), torsoMat, torsoMat];
+  const skin = Lam(o.skin || 0x6b3e26), pants = Lam(o.pants), shoe = Lam(o.shoes || 0xf4f4f4), dark = Lam(0x1b1b1b), side = Lam(o.side);
+  const torso = mesh(box(0.62, 0.72, 0.36), [side, side, side, side, o.back, o.front || o.back], 0, 1.16, 0);
   g.add(torso);
-  g.add(mesh(box(0.64, 0.24, 0.38), shorts, 0, 0.72, 0));
+  g.add(mesh(box(0.64, 0.24, 0.38), pants, 0, 0.72, 0));
+  if (o.belt) g.add(mesh(box(0.65, 0.08, 0.39), Lam(o.belt), 0, 0.84, 0));
   const head = mesh(box(0.42, 0.44, 0.42), skin, 0, 1.74, 0); g.add(head);
   head.add(mesh(box(0.44, 0.12, 0.44), dark, 0, 0.18, 0));
-  if (headwear) { head.add(mesh(box(0.46, 0.14, 0.46), headwear, 0, 0.26, 0)); head.add(mesh(box(0.46, 0.05, 0.3), headwear, 0, 0.2, -0.34)); }
+  const hw = o.hat && Lam(o.hat.color);
+  if (o.hat && o.hat.type === 'cap') { head.add(mesh(box(0.46, 0.14, 0.46), hw, 0, 0.26, 0)); head.add(mesh(box(0.46, 0.05, 0.3), hw, 0, 0.2, -0.34)); }
+  if (o.hat && o.hat.type === 'beret') { const b = mesh(box(0.5, 0.12, 0.5), hw, 0.03, 0.27, 0); b.rotation.z = -0.18; head.add(b); head.add(mesh(box(0.08, 0.08, 0.04), Lam(0xc9a227), -0.12, 0.26, -0.24)); }
+  if (o.hat && o.hat.type === 'bandana') head.add(mesh(box(0.46, 0.1, 0.46), hw, 0, 0.12, 0));
   const legs = [-0.16, 0.16].map((x) => {
     const piv = new THREE.Group(); piv.position.set(x, 0.78, 0);
-    piv.add(mesh(box(0.22, 0.72, 0.24), x < 0 ? shorts : shorts, 0, -0.3, 0));
-    piv.add(mesh(box(0.2, 0.3, 0.22), skin, 0, -0.56, 0));
+    piv.add(mesh(box(0.22, 0.72, 0.24), pants, 0, -0.3, 0));
+    piv.add(mesh(box(0.2, 0.3, 0.22), o.longPants ? pants : skin, 0, -0.56, 0));
     piv.add(mesh(box(0.26, 0.14, 0.38), shoe, 0, -0.74, -0.05));
     g.add(piv); return piv;
   });
   const arms = [-0.42, 0.42].map((x) => {
     const piv = new THREE.Group(); piv.position.set(x, 1.46, 0);
     piv.add(mesh(box(0.18, 0.6, 0.2), skin, 0, -0.3, 0));
+    if (o.sleeves) piv.add(mesh(box(0.2, 0.26, 0.22), side, 0, -0.1, 0));
     g.add(piv); return piv;
   });
+  if (o.prop) {
+    const stick = mesh(box(0.07, 0.07, o.prop === 'baton' ? 0.6 : 1.0), Lam(o.prop === 'baton' ? 0x111111 : 0x7a5434), 0, -0.6, -0.25);
+    arms[1].add(stick);
+  }
   return { group: g, legs, arms, head, torso };
 }
 function animateRunner(r, phase, mode) {
@@ -705,7 +756,8 @@ function animateRunner(r, phase, mode) {
 }
 
 // ---------- world state ----------
-let player, chaser, shadow, road, water;
+let player, shadow, road, water;
+const crews = {};
 const segments = [];
 const obstacles = [];
 const coins = [];
@@ -713,7 +765,7 @@ const powerups = [];
 const st = {
   mode: 'menu', distance: 0, speed: START_SPEED, score: 0, coins: 0, nextRow: 60, nextPower: 350,
   lane: 1, prevLane: 1, x: 0, y: 0, vy: 0, grounded: true, slide: 0, phase: 0, invuln: 0,
-  chase: 0, chaserZ: 14, dyingT: 0, reason: '', zone: 0, camY: 0,
+  chase: 0, chaserZ: 14, chaserX: 0, crew: 'agbero', caught: false, dyingT: 0, reason: '', zone: 0, camY: 0,
   power: { magnet: 0, jump: 0, double: 0 }, time: 0, lastToastCoin: 0,
 };
 
@@ -725,13 +777,28 @@ function initWorld() {
 
   for (let i = 0; i < NSEG; i++) { const g = new THREE.Group(); scene.add(g); segments.push({ group: g, a: 0 }); }
 
-  const r = makeRunner(T.jersey, 0x1b2a4a, null);
+  const r = makeRunner({ back: T.jersey, side: 0x0a8a4a, pants: 0x1b2a4a });
   player = r; scene.add(r.group);
-  const c = makeRunner(T.singlet, 0x2b4f7a, Lam(0xc8452e));
-  chaser = c; scene.add(c.group);
+  // chasers, each with a formation offset (x, z) behind the player
+  const a = T.agbero;
+  crews.agbero = [
+    [makeRunner({ back: a[0].mat, side: a[0].bg, pants: 0x2b4f7a, longPants: true, hat: { type: 'cap', color: 0xc8452e }, prop: 'stick' }), 0, 0],
+    [makeRunner({ back: a[1].mat, side: a[1].bg, pants: 0x5a4a2a, hat: { type: 'bandana', color: 0x1f1f1f }, shoes: 0x333333 }), -1.05, 0.7],
+    [makeRunner({ back: a[2].mat, side: a[2].bg, pants: 0x3a5f8a, longPants: true, hat: { type: 'bandana', color: 0xc8452e }, prop: 'stick' }), 1.05, 1.0],
+  ];
+  crews.olopa = [
+    [makeRunner({ back: T.police, front: T.policeFront, side: 0x161a24, sleeves: true, pants: 0x161a24, longPants: true, belt: 0x3a2a1a, shoes: 0x111111, hat: { type: 'beret', color: 0x111111 }, prop: 'baton' }), 0, 0],
+    [makeRunner({ back: T.police, front: T.policeFront, side: 0x161a24, sleeves: true, pants: 0x161a24, longPants: true, belt: 0x3a2a1a, shoes: 0x111111, hat: { type: 'cap', color: 0x161a24 } }), 1.05, 0.8],
+  ];
+  crews.lastma = [
+    [makeRunner({ back: T.lastma, side: 0xe2b11f, sleeves: true, pants: 0x6e1e2a, longPants: true, shoes: 0x111111, hat: { type: 'beret', color: 0x6e1e2a } }), 0, 0],
+  ];
+  Object.values(crews).forEach((list) => list.forEach(([m]) => { m.group.position.y = -50; scene.add(m.group); }));
   shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 16), T.shadow); shadow.rotation.x = -Math.PI / 2; scene.add(shadow);
 }
 
+const groundMats = {};
+function groundMat(c) { return groundMats[c] || (groundMats[c] = Lam(c)); }
 // segments: absolute position `a` is the near edge of the segment along the run
 function buildSegment(seg) {
   const g = seg.group;
@@ -739,6 +806,13 @@ function buildSegment(seg) {
   const zi = zoneIndexAt(seg.a + SEG_LEN / 2);
   const zone = ZONES[zi];
   const L = SEG_LEN;
+  // area border: green Lagos State welcome gantry
+  if (zoneIndexAt(seg.a - 1) !== zi) {
+    const px = zone.type === 'bridge' ? 4.0 : 4.5;
+    [-1, 1].forEach((s) => g.add(mesh(box(0.25, 7.2, 0.25), T.metal, s * px, 3.6, -L / 2 + 3)));
+    g.add(mesh(box(px * 2 + 0.4, 0.2, 0.2), T.metal, 0, 6.9, -L / 2 + 3));
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 1.6), T.welcome[zi]); sign.position.set(0, 6.1, -L / 2 + 3.13); g.add(sign);
+  }
   if (zone.type === 'bridge') {
     g.add(mesh(box(8.4, 1.2, L), T.darkConcrete, 0, -0.62, 0));
     [-1, 1].forEach((s) => {
@@ -761,7 +835,7 @@ function buildSegment(seg) {
     g.add(mesh(box(0.5, 0.1, L), T.gutter, s * 3.95, -0.03, 0));
     g.add(mesh(box(0.15, 0.3, L), T.curb, s * 4.25, 0.12, 0));
     g.add(mesh(box(2.4, 0.22, L), T.sidewalk, s * 5.5, 0.11, 0));
-    g.add(mesh(box(84, 0.1, L), T.ground, s * 48.6, -0.04, 0));
+    g.add(mesh(box(84, 0.1, L), groundMat(zone.ground), s * 48.6, -0.04, 0));
     // buildings along this side
     let z = -L / 2;
     while (z < L / 2 - 2) {
@@ -774,6 +848,11 @@ function buildSegment(seg) {
       const mat = glass ? pick(T.glass) : pick(T.facades);
       const bz = z + len / 2;
       if (bz + len / 2 > L / 2 + 3) break;
+      if (Math.random() > zone.density) {
+        // empty plot: bush, a palm or nothing
+        if (Math.random() < 0.6) { const p = P.palm.clone(); p.position.set(s * rand(8, 14), 0, bz); p.rotation.y = rand(0, 6); g.add(p); }
+        z += len + 1; continue;
+      }
       const b = new THREE.Mesh(geo, [mat, mat, T.roof, T.roof, mat, mat]);
       b.position.set(s * (setback + dx / 2), h / 2, bz);
       g.add(b);
@@ -785,9 +864,14 @@ function buildSegment(seg) {
       }
       z += len + rand(0.3, 1.5);
     }
-    if (Math.random() < zone.stalls) { const st2 = pick(P.stalls).clone(); st2.position.set(s * 5.6, 0.22, rand(-7, 7)); st2.rotation.y = rand(0, 3); g.add(st2); }
-    if (Math.random() < zone.palms) { const p = P.palm.clone(); p.position.set(s * 6.3, 0.2, rand(-8, 8)); p.rotation.y = rand(0, 6); g.add(p); }
+    const nStalls = Math.floor(zone.stalls) + (Math.random() < zone.stalls % 1 ? 1 : 0);
+    for (let k = 0; k < nStalls; k++) { const st2 = pick(P.stalls).clone(); st2.position.set(s * rand(5.3, 6.2), 0.22, -8 + (k + Math.random() * 0.6) * (16 / Math.max(1, nStalls))); st2.rotation.y = rand(0, 3); g.add(st2); }
+    const nPalms = Math.floor(zone.palms) + (Math.random() < zone.palms % 1 ? 1 : 0);
+    for (let k = 0; k < nPalms; k++) { const p = P.palm.clone(); p.position.set(s * 6.3, 0.2, rand(-8, 8)); p.rotation.y = rand(0, 6); g.add(p); }
   });
+  if (zone.footbridge && Math.random() < zone.footbridge && zoneIndexAt(seg.a - 1) === zi) {
+    const fb = P.footbridge.clone(); fb.position.z = rand(-4, 4); g.add(fb);
+  }
   const pole = P.pole.clone(); pole.position.set(-4.7, 0, 0); g.add(pole);
   [-0.6, 0.6].forEach((dx) => g.add(mesh(box(0.03, 0.03, L), T.wire, -4.7 + dx, 7.45, 0)));
   if (Math.random() < 0.22) {
@@ -864,7 +948,8 @@ function spawnRow(a) {
 
 // ---------- HUD helpers ----------
 let toastTimer = 0;
-function toast(text, ms) { ui.toast.textContent = text; ui.toast.classList.add('show'); toastTimer = (ms || 1400) / 1000; }
+function showArea(i) { ui.areaName.textContent = ZONES[i].name; $('areaCrew').textContent = CREWS[ZONES[i].crew].label; }
+function toast(text, ms, sub) { ui.toast.textContent = text; if (sub) { const sm = document.createElement('small'); sm.textContent = sub; ui.toast.appendChild(sm); } ui.toast.classList.add('show'); toastTimer = (ms || 1400) / 1000; }
 const POWER_INFO = { magnet: ['Magnet', 10], jump: ['Spring sneakers', 10], double: ['Jollof 2× score', 12] };
 function renderPowers() {
   const html = Object.keys(st.power).filter((k) => st.power[k] > 0).map((k) =>
@@ -881,11 +966,11 @@ function resetRun() {
   clearRun();
   Object.assign(st, {
     distance: 0, speed: START_SPEED, score: 0, coins: 0, nextRow: 55, nextPower: 300, lane: 1, prevLane: 1, x: 0, y: 0, vy: 0,
-    grounded: true, slide: 0, invuln: 0, chase: 0, chaserZ: 14, dyingT: 0, reason: '', zone: 0, camY: 0, lastToastCoin: 0,
+    grounded: true, slide: 0, invuln: 0, chase: 0, chaserZ: 14, chaserX: 0, crew: ZONES[0].crew, caught: false, dyingT: 0, reason: '', zone: 0, camY: 0, lastToastCoin: 0,
     power: { magnet: 0, jump: 0, double: 0 },
   });
   segments.forEach((s, i) => { s.a = -20 + i * SEG_LEN; buildSegment(s); });
-  ui.areaName.textContent = ZONES[0].name;
+  showArea(0);
   player.group.rotation.set(0, 0, 0);
 }
 function startRun() {
@@ -1005,7 +1090,6 @@ function update(dt) {
     st.phase += dt * st.speed * 0.6;
     animateRunner(player, st.phase, 'run');
     player.group.position.set(0, 0, 0);
-    chaser.group.position.set(0, -50, 0);
     shadow.position.set(0, 0.02, 0);
     camera.position.set(Math.sin(st.time * 0.3) * 2.5, 3.2, 6.5);
     camera.lookAt(0, 1.4, -6);
@@ -1059,8 +1143,10 @@ function update(dt) {
         if (o.pz && !o.px) {
           // came in from the side: bounce back and stumble
           st.lane = st.prevLane; st.invuln = 0.5;
-          if (st.chase > 0) { die('The agbero don catch you!'); break; }
-          st.chase = 7; Sound.bump(); toast(pick(['Agbero: Where you dey go?!', 'Oya come back here!', 'You don jam am!']));
+          if (st.chase > 0) { st.caught = true; die(CREWS[st.crew].caught); break; }
+          st.crew = ZONES[st.zone].crew;
+          st.chase = 7; Sound.bump(); if (st.crew !== 'agbero') Sound.whistle();
+          toast(pick(CREWS[st.crew].taunts), 1600);
         } else { die(o.crash); break; }
       }
       o.px = ox; o.pz = oz;
@@ -1104,7 +1190,7 @@ function update(dt) {
 
   // zone change
   const zi = zoneIndexAt(st.distance);
-  if (zi !== st.zone) { st.zone = zi; ui.areaName.textContent = ZONES[zi].name; if (playing) toast('Welcome to ' + ZONES[zi].name, 1800); }
+  if (zi !== st.zone) { st.zone = zi; showArea(zi); if (playing) toast('Welcome to ' + ZONES[zi].name, 2400, CREWS[ZONES[zi].crew].intro); }
 
   // player pose
   st.phase += dt * st.speed * 0.55;
@@ -1120,12 +1206,17 @@ function update(dt) {
   shadow.position.set(st.x, support + 0.03, 0);
   const sc = clamp(1 - (st.y - support) * 0.18, 0.4, 1); shadow.scale.set(sc, sc, sc);
 
-  // chaser
-  const cz = dying && /agbero/i.test(st.reason) ? 1.2 : st.chase > 0 ? 2.6 : 16;
+  // chasers: whoever controls the area runs in behind you
+  if (st.chase <= 0 && st.chaserZ > 12 && !dying) st.crew = ZONES[st.zone].crew;
+  const cz = dying && st.caught ? 1.2 : st.chase > 0 ? 2.6 : 16;
   st.chaserZ += (cz - st.chaserZ) * Math.min(1, dt * (st.chase > 0 ? 3 : 0.8));
-  chaser.group.position.set(lerp(chaser.group.position.x, st.x * 0.8, Math.min(1, dt * 5)), Math.max(0, support - 0.1), st.chaserZ);
-  animateRunner(chaser, st.phase * 1.05 + 1, 'run');
-  chaser.arms[1].rotation.x = -2.6 + Math.sin(st.time * 12) * 0.3;
+  st.chaserX = lerp(st.chaserX, st.x * 0.8, Math.min(1, dt * 5));
+  Object.keys(crews).forEach((k) => crews[k].forEach(([m, ox, oz], i) => {
+    if (k !== st.crew) { m.group.position.y = -50; return; }
+    m.group.position.set(clamp(st.chaserX + ox, -3.2, 3.2), Math.max(0, support - 0.1), st.chaserZ + oz);
+    animateRunner(m, st.phase * 1.05 + 1 + i * 0.9, 'run');
+    m.arms[1].rotation.x = -2.6 + Math.sin(st.time * 12 + i) * 0.3;
+  }));
 
   // camera
   st.camY += (Math.min(support, st.y) - st.camY) * Math.min(1, dt * 4);
