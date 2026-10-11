@@ -31,3 +31,25 @@ The sidewalks are full of Lagos people too: hawkers with trays on their heads, m
 | Mute | M | Sound button |
 
 Built with [three.js](https://threejs.org/) r128 from cdnjs. All textures and sounds are generated in code.
+
+---
+
+# Japa from the Shrine
+
+A second game in this repo: a Temple Run-style escape in `japa.html`. Open it in a browser to play.
+
+You've taken the sacred calabash from the shrine and the Egungun masquerades are after you. Run along an ancient raised causeway with sharp 90° corners, through five areas that loop:
+
+1. **Sacred Grove**: giant trees, carved stone heads, trees wrapped in red and white cloth
+2. **Laterite Ruins**: red earth pillars and walls
+3. **Osun River Bridge**: plank bridge with rope rails over the river, more gaps to jump
+4. **Village Outskirts**: thatched huts and palms
+5. **Road to the Airport**: asphalt, Ghana-must-go bag piles, visa check barriers, speed bumps and a plane overhead
+
+- **Turn** at corners with ← / → (or swipe). Miss the turn and you fall into the bush.
+- **Jump** roots, fire pits and gaps. **Slide** under stone arches and fallen trees. **Dodge** shrine statues.
+- **Collect cowries.** Power-ups: cowrie magnet, spring legs, double cowries.
+- **Stumble** and the Egungun close in. Stumble again and they surround you.
+- **Runners:** Tunde, Amaka, Iya Basirat or Kemi.
+
+Same controls as Lagos Run, plus turning. No build step; three.js r128 from cdnjs, everything else generated in code.
