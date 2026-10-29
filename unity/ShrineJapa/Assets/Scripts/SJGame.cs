@@ -98,7 +98,7 @@ public partial class JapaGame : MonoBehaviour {
         zoneTotal = 0; foreach (Zone z in ZONES) zoneTotal += z.len;
         Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 1;
-        QualitySettings.antiAliasing = Application.isMobilePlatform ? 2 : 4;
+        QualitySettings.antiAliasing = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer ? 2 : 4;
         Input.simulateMouseWithTouches = false;
         bool light = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer;
         QualitySettings.skinWeights = light ? SkinWeights.TwoBones : SkinWeights.FourBones;
@@ -133,6 +133,7 @@ public partial class JapaGame : MonoBehaviour {
         cam.nearClipPlane = 0.1f; cam.farClipPlane = 400; cam.allowMSAA = true; cam.allowHDR = false;
         cg.AddComponent<AudioListener>();
         if (!light) cg.AddComponent<LRPost>();
+        LRPerf.Attach(cg);
         skyQuad = new Shape().Quad(1, 1, T.sky, Matrix4x4.identity).Make("sky", cg.transform).transform;
         skyQuad.localPosition = new Vector3(0, 0, 390);
         groundQuad = new Shape().Quad(600, 600, T.ground, V.M(0, 0, 0, -PI / 2, 0, 0)).Make("ground").transform;

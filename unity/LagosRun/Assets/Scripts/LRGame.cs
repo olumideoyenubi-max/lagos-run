@@ -209,7 +209,7 @@ public partial class LRGame : MonoBehaviour {
     void Start() {
         Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 1;
-        QualitySettings.antiAliasing = Application.isMobilePlatform ? 2 : 4;
+        QualitySettings.antiAliasing = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer ? 2 : 4;
         Input.simulateMouseWithTouches = false;
         // the people are detailed models: on phones and in browsers skin them more cheaply and show fewer at once
         bool light = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer;
@@ -253,6 +253,7 @@ public partial class LRGame : MonoBehaviour {
         cam.nearClipPlane = 0.1f; cam.farClipPlane = 500; cam.allowMSAA = true; cam.allowHDR = false;
         cg.AddComponent<AudioListener>();
         if (!light) cg.AddComponent<LRPost>();
+        LRPerf.Attach(cg);
         skyQuad = new Shape().Quad(1, 1, T.sky, Matrix4x4.identity).Make("sky", cg.transform).transform;
         skyQuad.localPosition = new Vector3(0, 0, 480);
         Transform sun = new Shape().Quad(1, 1, T.sun, Matrix4x4.identity).Make("sun").transform;
