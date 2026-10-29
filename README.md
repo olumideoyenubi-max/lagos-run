@@ -53,3 +53,12 @@ You've taken the sacred calabash from the shrine and the Egungun masquerades are
 - **Runners:** Tunde, Amaka, Iya Basirat or Kemi.
 
 Same controls as Lagos Run, plus turning. No build step; three.js r128 from cdnjs, everything else generated in code.
+
+## Unity versions
+
+Full Unity 6 (6000.6.5f1) ports of both games, with rigged human characters, recorded motion clips, real building/vehicle models and Poly Haven textures:
+
+- `unity/LagosRun` — Lagos Run
+- `unity/ShrineJapa` — Japa from the Shrine
+
+Open either folder in Unity, or build from a terminal with `Unity -batchmode -quit -projectPath unity/LagosRun -executeMethod LRBuild.BuildMac` (also `BuildWeb`, `BuildAndroid`, `BuildIOS`). Each project's own `README.md` has details, and `Assets/Credits.md` lists asset sources and licences (CC-BY / CC0).
