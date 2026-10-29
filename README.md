@@ -1,6 +1,6 @@
 # Lagos Run
 
-An endless 3D runner set on the streets of Lagos, in the style of Subway Surfers. Open `index.html` in a browser to play. No build step.
+An endless 3D runner set on the streets of Lagos, in the style of Subway Surfers. Play it from `index.html`, which runs the Unity version below (it must be served over HTTP; see "Browser builds").
 
 - Run from Ikorodu through Mile 12 Market, Oshodi, Ikeja and Yaba, across Third Mainland Bridge, into Lagos Island, Victoria Island, Lekki, Ajah and Epe, then loop. Areas get longer as you go, and each one starts with a Lagos State welcome sign.
 - Dodge danfos (or jump onto their roofs), keke napep, road-works barriers, potholes and overhead banners.
@@ -36,7 +36,7 @@ Built with [three.js](https://threejs.org/) r128 from cdnjs. All textures and so
 
 # Japa from the Shrine
 
-A second game in this repo: a Temple Run-style escape in `japa.html`. Open it in a browser to play.
+A second game in this repo: a Temple Run-style escape in `japa.html`, which runs the Unity version below.
 
 You've taken the sacred calabash from the shrine and the Egungun masquerades are after you. Run along an ancient raised causeway with sharp 90° corners, through five areas that loop:
 
@@ -63,11 +63,11 @@ Full Unity 6 (6000.6.5f1) ports of both games, with rigged human characters, rec
 
 Open either folder in Unity, or build from a terminal with `Unity -batchmode -quit -projectPath unity/LagosRun -executeMethod LRBuild.BuildMac` (also `BuildWeb`, `BuildAndroid`, `BuildIOS`). Each project's own `README.md` has details, and `Assets/Credits.md` lists asset sources and licences (CC-BY / CC0).
 
-### Browser builds of the Unity versions
+### Browser builds
 
-Ready-built web versions of the Unity games, playable in any modern browser:
+`index.html` and `japa.html` load these ready-built web versions of the Unity games, playable in any modern browser:
 
 - `play/lagos-run/` — Lagos Run (shown as "Runtown")
 - `play/japa/` — Japa from the Shrine
 
-They have to be served over HTTP (opening `index.html` straight from disk won't work). Locally: `python3 -m http.server` inside either folder, then visit `http://localhost:8000/`. Rebuild them with `-executeMethod LRBuild.BuildWeb`, which writes to each project's `Builds/Web`.
+They have to be served over HTTP (opening the HTML straight from disk won't work). Locally: `python3 -m http.server` at the repo root, then visit `http://localhost:8000/` or `http://localhost:8000/japa.html`. The original three.js versions are in the git history. Rebuild them with `-executeMethod LRBuild.BuildWeb`, which writes to each project's `Builds/Web`.
