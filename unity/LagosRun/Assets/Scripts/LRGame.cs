@@ -214,7 +214,7 @@ public partial class LRGame : MonoBehaviour {
         // the people are detailed models: on phones and in browsers skin them more cheaply and show fewer at once
         bool light = Application.isMobilePlatform || Application.platform == RuntimePlatform.WebGLPlayer;
         QualitySettings.skinWeights = light ? SkinWeights.TwoBones : SkinWeights.FourBones;
-        npcRange = light ? 45 : 80;
+        npcRange = light ? 35 : 80;
 
         best = PlayerPrefs.GetInt("lagosrun.best", 0);
         purse = PlayerPrefs.GetInt("lagosrun.purse", 0);
@@ -235,10 +235,10 @@ public partial class LRGame : MonoBehaviour {
         sun0.type = LightType.Directional; sun0.transform.rotation = Quaternion.LookRotation(-V.P(-6, 12, 5).normalized);
         sun0.shadows = light ? LightShadows.Hard : LightShadows.Soft; sun0.shadowStrength = 1; sun0.shadowBias = 0.05f; sun0.shadowNormalBias = 0.4f;
         QualitySettings.shadows = light ? ShadowQuality.HardOnly : ShadowQuality.All;
-        QualitySettings.shadowDistance = light ? 35 : 85;
+        QualitySettings.shadowDistance = light ? 28 : 85;
         QualitySettings.shadowCascades = light ? 1 : 4;
         QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
-        QualitySettings.shadowResolution = light ? ShadowResolution.Medium : ShadowResolution.VeryHigh;
+        QualitySettings.shadowResolution = light ? ShadowResolution.Low : ShadowResolution.VeryHigh;
         QualitySettings.shadowProjection = ShadowProjection.StableFit;
 
         T.Build();

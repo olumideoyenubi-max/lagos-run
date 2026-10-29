@@ -116,10 +116,10 @@ public partial class JapaGame : MonoBehaviour {
         sun.type = LightType.Directional; sun.transform.rotation = Quaternion.LookRotation(-V.P(-6, 12, 5).normalized);
         sun.shadows = light ? LightShadows.Hard : LightShadows.Soft; sun.shadowStrength = 1; sun.shadowBias = 0.05f; sun.shadowNormalBias = 0.4f;
         QualitySettings.shadows = light ? ShadowQuality.HardOnly : ShadowQuality.All;
-        QualitySettings.shadowDistance = light ? 35 : 80;
+        QualitySettings.shadowDistance = light ? 28 : 80;
         QualitySettings.shadowCascades = light ? 1 : 4;
         QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
-        QualitySettings.shadowResolution = light ? ShadowResolution.Medium : ShadowResolution.VeryHigh;
+        QualitySettings.shadowResolution = light ? ShadowResolution.Low : ShadowResolution.VeryHigh;
         QualitySettings.shadowProjection = ShadowProjection.StableFit;
 
         T.Build();

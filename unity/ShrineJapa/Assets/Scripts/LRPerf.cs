@@ -13,8 +13,8 @@ public class LRPerf : MonoBehaviour {
     static float LRGetDPR() { return 1; }
     static void LRSetDPR(float r) { }
 #endif
-    const float Floor = 0.75f, Low = 50f, High = 58f;
-    float top, dpr, settle = 2.5f, frames, time, goodFor;
+    const float Floor = 0.6f, Low = 54f, High = 58.5f;
+    float top, dpr, settle = 2.5f, frames, time, goodFor, calm;
     float ceiling;   // a level that proved too slow is not tried again
 
     public static void Attach(GameObject go) {
@@ -25,6 +25,8 @@ public class LRPerf : MonoBehaviour {
         dpr = LRGetDPR();
         top = dpr;   // the page's own setting is the most it ever draws
         ceiling = top;
+        if (top > 1) Set(1);   // start at standard resolution and sharpen only once frames prove there is room
+        settle = 2.5f;
     }
 
     void Set(float r) {
@@ -38,15 +40,17 @@ public class LRPerf : MonoBehaviour {
         if (settle > 0) { settle -= dt; return; }
         if (dt > 0.25f) return;   // a hitch or a hidden tab, not the steady rate
         frames++; time += dt;
-        if (time < 1.5f) return;
+        if (time < 1f) return;
         float fps = frames / time; frames = time = 0;
         if (fps < Low && dpr > Floor) {
             ceiling = Mathf.Min(ceiling, dpr - 0.05f);
             Set(dpr * Mathf.Clamp(fps / 60f, 0.7f, 0.9f));
-            goodFor = 0;
+            goodFor = calm = 0;
+        } else if (fps >= High && (calm += 1) >= 30 && ceiling < top) {
+            ceiling = top; calm = 0;   // a long smooth stretch: a slow moment earlier may have been a one-off
         } else if (fps >= High && dpr < ceiling) {
-            goodFor += 1.5f;
-            if (goodFor >= 6) { Set(Mathf.Min(ceiling, dpr + 0.15f)); goodFor = 0; }
+            goodFor += 1;
+            if (goodFor >= 5) { Set(Mathf.Min(ceiling, dpr + 0.15f)); goodFor = 0; }
         } else goodFor = 0;
     }
 }
