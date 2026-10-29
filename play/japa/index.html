@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Japa from the Shrine</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #24301f; touch-action: none; }
+  #unity-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #24301f; outline: none; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; font: 800 18px system-ui, sans-serif; color: #fbf6ea; pointer-events: none; text-align: center; }
+  #bar { width: min(260px, 60vw); height: 10px; border: 3px solid #16120c; border-radius: 8px; background: #fff7e2; overflow: hidden; margin: 12px auto 0; }
+  #fill { height: 100%; width: 0; background: #0a8a4a; }
+</style>
+</head>
+<body>
+<canvas id="unity-canvas" tabindex="-1"></canvas>
+<div id="loading"><div><div id="loading-text">Loading the grove…</div><div id="bar"><div id="fill"></div></div></div></div>
+<script src="Build/Web.loader.js"></script>
+<script>
+  // the game fills the window and follows it when a phone rotates
+  createUnityInstance(document.getElementById("unity-canvas"), {
+    dataUrl: "Build/Web.data.unityweb",
+    frameworkUrl: "Build/Web.framework.js.unityweb",
+    codeUrl: "Build/Web.wasm.unityweb",
+    streamingAssetsUrl: "StreamingAssets",
+    companyName: "Olumide Oyenubi",
+    productName: "Japa from the Shrine",
+    productVersion: "1.0",
+    matchWebGLToCanvasSize: true,
+    devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.75)
+  }, function (p) { document.getElementById("fill").style.width = (p * 100) + "%"; })
+    .then(function () { document.getElementById("loading").remove(); })
+    .catch(function (e) { document.getElementById("loading-text").textContent = "Could not start: " + e; });
+</script>
+</body>
+</html>

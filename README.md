@@ -62,3 +62,12 @@ Full Unity 6 (6000.6.5f1) ports of both games, with rigged human characters, rec
 - `unity/ShrineJapa` — Japa from the Shrine
 
 Open either folder in Unity, or build from a terminal with `Unity -batchmode -quit -projectPath unity/LagosRun -executeMethod LRBuild.BuildMac` (also `BuildWeb`, `BuildAndroid`, `BuildIOS`). Each project's own `README.md` has details, and `Assets/Credits.md` lists asset sources and licences (CC-BY / CC0).
+
+### Browser builds of the Unity versions
+
+Ready-built web versions of the Unity games, playable in any modern browser:
+
+- `play/lagos-run/` — Lagos Run (shown as "Runtown")
+- `play/japa/` — Japa from the Shrine
+
+They have to be served over HTTP (opening `index.html` straight from disk won't work). Locally: `python3 -m http.server` inside either folder, then visit `http://localhost:8000/`. Rebuild them with `-executeMethod LRBuild.BuildWeb`, which writes to each project's `Builds/Web`.
