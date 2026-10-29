@@ -56,6 +56,13 @@ public static class LRBuild {
         Build(BuildTarget.StandaloneOSX, "Builds/Mac/Runtown.app");
     }
     [MenuItem("Runtown/Build Web")] public static void BuildWeb() { PlayerSettings.WebGL.template = "PROJECT:LagosRun"; Build(BuildTarget.WebGL, "Builds/Web"); }
+    // debug web build with full exception traces, for tracking down browser-only errors
+    public static void BuildWebDev() {
+        PlayerSettings.WebGL.template = "PROJECT:LagosRun";
+        var ex = PlayerSettings.WebGL.exceptionSupport;
+        PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.FullWithStacktrace;
+        try { Build(BuildTarget.WebGL, "Builds/WebDev", BuildOptions.Development); } finally { PlayerSettings.WebGL.exceptionSupport = ex; AssetDatabase.SaveAssets(); }
+    }
     [MenuItem("Runtown/Build Android APK")] public static void BuildAndroid() { Build(BuildTarget.Android, "Builds/Android/Runtown.apk"); }
     [MenuItem("Runtown/Build iOS Xcode Project")] public static void BuildIOS() { Build(BuildTarget.iOS, "Builds/iOS"); }
 }

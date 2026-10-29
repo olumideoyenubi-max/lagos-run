@@ -5,7 +5,7 @@ using UnityEngine;
 public static class P {
     public static Shape[] danfo, banner, stalls, billboards, clutter;
     public static Shape kiosk;
-    public static Shape keke, barrier, pothole, coin, palm, pole, lamp, stilt, footbridge, canoe, shadow;
+    public static Shape keke, barrier, pothole, coin, palm, pole, lamp, stilt, footbridge, canoe;
     const float PI = Mathf.PI;
 
     static T2 Pick<T2>(T2[] a) { return a[Random.Range(0, a.Length)]; }
@@ -112,7 +112,6 @@ public static class P {
         canoe.Box(0.35f, 0.8f, 0.3f, T.Lam(0x2f5aa8), 0, 0.55f, 0.6f);
         canoe.Box(0.3f, 0.3f, 0.3f, T.Lam(0x5a3420), 0, 1.1f, 0.6f);
 
-        shadow = new Shape().Quad(1, 1, T.shadow, V.M(0, 0, 0, -PI / 2, 0, 0));
 
         // real models replace the box versions above where we have them
         GameObject palmModel = Resources.Load<GameObject>("Props/Palm"), cartModel = Resources.Load<GameObject>("Props/Cart");

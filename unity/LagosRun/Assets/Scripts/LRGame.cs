@@ -171,7 +171,7 @@ public partial class LRGame : MonoBehaviour {
     class Chaser { public Runner r; public float ox, oz; public Vector3 pos; public bool armed; }
 
     Camera cam; Transform skyQuad; float camBack = 7.5f, camUp = 4.2f; int lastW, lastH;
-    Runner player; Transform shadow; LRAudio sound;
+    Runner player; LRAudio sound;
     readonly Dictionary<string, List<Chaser>> crews = new Dictionary<string, List<Chaser>>();
     readonly List<Seg> segments = new List<Seg>();
     readonly List<Ob> obstacles = new List<Ob>();
@@ -298,8 +298,6 @@ public partial class LRGame : MonoBehaviour {
             NewChaser(new Person { model = "Emeka", dress = new[] { "suit", "#4a5a32", "shoes", "x#222222" }, hat = "beret", hatColor = 0x2a3320, prop = "baton" }, -0.6f, 0),
             NewChaser(new Person { model = "Dayo", dress = new[] { "camotee", "#4a5a32" }, hat = "cap", hatColor = 0x2a3320 }, 0.6f, 0.3f),
         };
-        shadow = P.shadow.Make("shadow").transform;
-        shadow.gameObject.SetActive(false);   // real shadows replace the blob
     }
     Chaser NewChaser(Person who, float ox, float oz) {
         Chaser c = new Chaser { r = People.Spawn(who, "chaser"), ox = ox, oz = oz, armed = who.prop != null };
@@ -715,7 +713,6 @@ public partial class LRGame : MonoBehaviour {
             phase += dt * speed * 0.6f;
             player.Animate(phase, "run", dt); player.Apply();
             player.root.position = Vector3.zero;
-            shadow.position = V.P(0, 0.02f, 0); shadow.localScale = Vector3.one;
             if (charView) {
                 // look back at the runner's face; keep them clear of the picker panel
                 bool portrait = cam.aspect < 0.85f;
@@ -845,8 +842,6 @@ public partial class LRGame : MonoBehaviour {
         }
         player.root.position = V.P(pp.x, pp.y, pp.z);
         player.Apply();
-        shadow.position = V.P(x, support + 0.03f, 0);
-        shadow.localScale = Vector3.one * Mathf.Clamp(1 - (y - support) * 0.18f, 0.4f, 1);
 
         // chasers: whoever controls the area runs in behind you
         if (chase <= 0 && chaserZ > 12 && !dying) crew = ZONES[zone].crew;

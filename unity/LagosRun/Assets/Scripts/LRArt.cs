@@ -39,9 +39,9 @@ public static class T {
     }
     public static Material DoubleSided(Material m) { m.SetFloat("_Cull", 0); return m; }
 
-    public static Texture2D skyTex, sunTex, roadTex, waterTex, shadowTex;
+    public static Texture2D skyTex, sunTex, roadTex, waterTex;
     public static Material glassPane, dark, door, appliance, tankBlack, roofFlat, trimFrames, trimFramesCut, trimShop, trimShopCut, weed, planks;
-    public static Material[] plastic, paint, shutters;
+    public static Material[] plastic, paint;
     static readonly Dictionary<string, Material> walls = new Dictionary<string, Material>(), grounds = new Dictionary<string, Material>();
     static readonly string[] Plasters = { "Plaster", "Plaster_Painted", "Plaster_Patched", "Paint_Peeling", "Plaster_Rough" };
     static readonly int[] PlasterAvg = { 0xb0a89c, 0xaaa39f, 0x8d8a87, 0x966c5c, 0xbbb2a3 };
@@ -96,10 +96,9 @@ public static class T {
     }
     public static Texture2D[] boardTex;
     public static Material road, water, roof, tank, danfoSide, danfoFront, yellow, black, tyre, rim, green, metal, concrete, darkConcrete,
-        sidewalk, curb, gutter, trunk, leaf, wire, wood, zinc, barrier, pothole, cone, coinFace, coinEdge, shadow, jersey, police, policeFront,
-        lastma, gele, geleGreen, gelePink, agbada, konda, unilag, vest, schoolShirt, pinafore, pinaforeSkirt, officeShirt, sky, sun;
-    public static Material[] facades, glass, signs, boards, danfoBack, banners, welcome, umbrella, goods, agberoBack;
-    public static int[] agberoSide;
+        sidewalk, curb, gutter, trunk, leaf, wire, wood, zinc, barrier, pothole, cone, coinFace, coinEdge,
+        vest, schoolShirt, pinafore, pinaforeSkirt, officeShirt, sky, sun;
+    public static Material[] facades, glass, signs, boards, danfoBack, banners, welcome, umbrella, goods;
     public static readonly Dictionary<string, Texture> ankara = new Dictionary<string, Texture>();
     public static readonly Dictionary<string, Texture2D> icon = new Dictionary<string, Texture2D>();
 
@@ -117,6 +116,16 @@ public static class T {
             g.Line(x + ox + 20, y + 4, x + ox + 30, y + 14, 3, H(b));
         }
         return g.End(true);
+    }
+    // a canvas radial gradient: filled ellipses from the rim inwards, through stops given as (position 0..1, colour)
+    static void Radial(LRCanvas g, float cx, float cy, float rx, float ry, float[] at, Color[] col) {
+        const int n = 32;
+        for (int i = n; i >= 1; i--) {
+            float t = (float)i / n;
+            int k = 0; while (k < at.Length - 2 && t > at[k + 1]) k++;
+            Color c = t <= at[0] ? col[0] : Color.Lerp(col[k], col[k + 1], Mathf.InverseLerp(at[k], at[k + 1], t));
+            g.Ellipse(cx, cy, rx * t, ry * t, c);
+        }
     }
     static Material Shine(int c) {
         LRCanvas g = new LRCanvas(64, 64, H(c));
@@ -323,6 +332,33 @@ public static class T {
             new object[] { "HAPPY 60TH MAMA", 0x7b2d8f, 0xffffff }, new object[] { "FUEL DEY!", 0xf5c518, 0x16120c } };
         banners = new Material[bn.Length];
         for (int i = 0; i < bn.Length; i++) banners[i] = DoubleSided(Lam(BannerTex((string)bn[i][0], (int)bn[i][1], (int)bn[i][2])));
+        // pothole: a dark puddle fading out at the rim, with a glint of sky on the water
+        g = new LRCanvas(128, 128, new Color(0, 0, 0, 0));
+        Radial(g, 64, 64, 62, 60, new[] { 0.16f, 0.55f, 0.8f, 1 }, new[] { H(0x3d5652), H(0x2c2a26), H(0x1d1b18), Rgba(60, 55, 50, 0) });
+        g.Ellipse(52, 56, 16, 8, Rgba(180, 210, 210, 0.35f), 0.4f);
+        pothole = Transparent(Lam(g.End()));
+        cone = Lam(0xf06a1c);
+
+        // coin: gold disc with a green naira sign
+        g = new LRCanvas(128, 128, H(0xc48d00));
+        Radial(g, 60, 58, 64, 64, new[] { 0.12f, 0.6f, 1 }, new[] { H(0xfff2a8), H(0xf5c518), H(0xc48d00) });
+        g.Ring(64, 64, 52, 6, H(0xb07d00));
+        Color naira = H(0x0a6a38);
+        g.Line(44, 92, 44, 36, 11, naira, true); g.Line(44, 36, 84, 92, 11, naira, true); g.Line(84, 92, 84, 36, 11, naira, true);
+        g.Line(32, 58, 96, 58, 6, naira, true); g.Line(32, 72, 96, 72, 6, naira, true);
+        coinFace = Emissive(Lam(g.End()), 0x332200);
+        coinEdge = Emissive(Lam(0xd9a400), 0x332200);
+
+        // ankara prints for dresses, by name
+        ankara["blue"] = Pattern(0x1f4fa3, 0xf5c518, 0xd22d2d);
+        ankara["orange"] = Pattern(0xe86a1c, 0x0a8a4a, 0xfff7e2);
+        ankara["pink"] = Pattern(0xc2387a, 0xf5c518, 0x16120c);
+        ankara["green"] = Pattern(0x0a8a4a, 0xf08c1a, 0xfff7e2);
+        ankara["purple"] = Pattern(0x5a3d8f, 0xf5c518, 0xffffff);
+
+        // hi-vis vest for the danfo crew
+        g = new LRCanvas(128, 128, H(0xf08c1a));
+        g.Rect(0, 70, 128, 12, H(0xe6e9ec)); g.Rect(0, 96, 128, 12, H(0xe6e9ec));
         g.Text("042", 64, 38, 30, Display, H(K));
         vest = Lam(g.End());
         schoolShirt = Lam(BackTex(0xf4f4f4, 0x1f3a6b, ""));
