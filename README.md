@@ -71,3 +71,7 @@ Open either folder in Unity, or build from a terminal with `Unity -batchmode -qu
 - `play/japa/` — Japa from the Shrine
 
 They have to be served over HTTP (opening the HTML straight from disk won't work). Locally: `python3 -m http.server` at the repo root, then visit `http://localhost:8000/` or `http://localhost:8000/japa.html`. The original three.js versions are in the git history. Rebuild them with `-executeMethod LRBuild.BuildWeb`, which writes to each project's `Builds/Web`.
+
+## License
+
+Copyright © 2026 Olumide Oyenubi. All rights reserved. See [LICENSE](LICENSE).
